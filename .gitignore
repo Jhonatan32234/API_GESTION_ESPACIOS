@@ -1,0 +1,14 @@
+# Dependencias
+/node_modules
+node_modules/
+.node_modules/
+.node_modules
+.pnpm-store/
+.pnp.*
+
+# Variables de entorno
+.env
+.env*.local
+
+# Logs
+npm-debug.log*
