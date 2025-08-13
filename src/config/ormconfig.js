@@ -8,6 +8,7 @@ const AppDataSource = new DataSource({
   username: process.env.DB_USER || "postgres",
   password: process.env.DB_PASS || "password",
   database: process.env.DB_NAME || "gestion_espacios",
+  schema: process.env.DB_SCHEMA || "public",
   synchronize: true, // ⚠ Solo en desarrollo
   logging: false,
   entities: [__dirname + "/../models/*.js"]
