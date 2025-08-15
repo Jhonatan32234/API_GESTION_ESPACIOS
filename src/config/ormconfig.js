@@ -2,13 +2,12 @@ require("dotenv").config();
 const { DataSource } = require("typeorm");
 
 const AppDataSource = new DataSource({
-  type: "postgres",
+  type: "mysql",
   host: process.env.DB_HOST || "localhost",
-  port: process.env.DB_PORT || 5432,
-  username: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASS || "password",
-  database: process.env.DB_NAME || "gestion_espacios",
-  schema: process.env.DB_SCHEMA || "public",
+  port: process.env.DB_PORT || 3306,
+  username: process.env.DB_USER || "mar",
+  password: process.env.DB_PASS || "mar",
+  database: process.env.DB_NAME || "traundo",
   synchronize: true, // ⚠ Solo en desarrollo
   logging: false,
   entities: [__dirname + "/../models/*.js"]

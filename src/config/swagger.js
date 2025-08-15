@@ -7,10 +7,19 @@ const options = {
     info: {
       title: "API Gestión de Espacios",
       version: "1.0.0",
-      description: "Documentación de la API de Gestión de Espacios"
+      description: "Documentación de la API con autenticación y roles"
+    },
+    components: {
+      securitySchemes: {
+        cookieAuth: {
+          type: "apiKey",
+          in: "cookie",
+          name: "token"
+        }
+      }
     }
   },
-  apis: ["./src/docs/*.js", "./src/routes/*.js"]
+  apis: ["./src/routes/*.js"]
 };
 
 const swaggerSpec = swaggerJsdoc(options);
