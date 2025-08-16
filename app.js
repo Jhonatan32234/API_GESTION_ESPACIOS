@@ -5,8 +5,12 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors"); 
 const AppDataSource = require("./src/config/ormconfig");
 const { swaggerUi, swaggerSpec } = require("./src/config/swagger");
-const routes = require("./src/routes/usuario.routes");
+const usuarioRoutes = require("./src/routes/usuario.routes");
+const periodoRoutes = require("./src/routes/periodo.routes");
 const authRoutes = require("./src/routes/auth.routes");
+const materiaRoutes = require("./src/routes/materia.routes");
+const espacioRoutes = require("./src/routes/espacio.routes");
+const inventarioRoutes = require("./src/routes/inventario.routes");
 
 const app = express();
 
@@ -23,7 +27,11 @@ app.use(cors({
 // Swagger
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use("/api/usuarios", routes);
+app.use("/api/usuarios", usuarioRoutes);
+app.use("/api/periodos", periodoRoutes);
+app.use("/api/materias", materiaRoutes);
+app.use("/api/espacios", espacioRoutes);
+app.use("/api/inventario", inventarioRoutes);
 app.use("/api/auth", authRoutes);
 
 AppDataSource.initialize()

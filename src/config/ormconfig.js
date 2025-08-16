@@ -10,7 +10,15 @@ const AppDataSource = new DataSource({
   database: process.env.DB_NAME || "traundo",
   synchronize: true, // ⚠ Solo en desarrollo
   logging: false,
-  entities: [__dirname + "/../models/*.js"]
+  entities: [
+  __dirname + "/../models/Usuario.js",
+  __dirname + "/../models/periodo.js",
+  __dirname + "/../models/plan_estudio.js",
+  __dirname + "/../models/materia.js",
+  __dirname + "/../models/espacio.js",
+  __dirname + "/../models/inventario.js",
+],
+
 });
 
 module.exports = AppDataSource;
