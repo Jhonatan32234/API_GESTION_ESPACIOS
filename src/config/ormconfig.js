@@ -17,6 +17,15 @@ const AppDataSource = new DataSource({
   __dirname + "/../models/materia.js",
   __dirname + "/../models/espacio.js",
   __dirname + "/../models/inventario.js",
+  __dirname + "/../models/solicitud.js",
+  __dirname + "/../models/solicitud_horario.js",
+  __dirname + "/../models/reserva.js",
+  __dirname + "/../models/Software.js",
+  __dirname + "/../models/Autoevaluacion.js",
+  __dirname + "/../models/Notificacion.js",
+  __dirname + "/../models/Reporte_Dano.js",
+  __dirname + "/../models/Mantenimiento.js",
+  __dirname + "/../models/conflicto_recurrente.js",
 ],
 
 });

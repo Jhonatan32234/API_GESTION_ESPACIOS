@@ -6,6 +6,22 @@ class EspacioController {
     res.json(espacios);
   }
 
+  async getTipos(req, res) {
+    const tipos = await espacioService.getTipos();
+    res.json(tipos);
+  }
+
+  async getCategorias(req, res) {
+    const categorias = await espacioService.getCategorias();
+    res.json(categorias);
+  }
+
+  async getUbicaciones(req, res) {
+  const ubicaciones = await espacioService.getUbicaciones();
+  res.json(ubicaciones);
+  }
+
+
   async getById(req, res) {
     const espacio = await espacioService.getById(req.params.id);
     espacio ? res.json(espacio) : res.status(404).json({ mensaje: "No encontrado" });

@@ -27,6 +27,38 @@ class EspacioService {
   async delete(id) {
     return await this.repo.delete(id);
   }
+
+  async getTipos() {
+    const espacios = await this.repo.find({
+      select: ["tipo"],
+      order: { tipo: "ASC" }
+    });
+    
+    const tiposUnicos = [...new Set(espacios.map(e => e.tipo))];
+    return tiposUnicos;
+  }
+
+  async getCategorias() {
+    const espacios = await this.repo.find({
+      select: ["categoria"],
+      order: { categoria: "ASC" }
+    });
+    
+    const categoriasUnicas = [...new Set(espacios.map(e => e.categoria))];
+    return categoriasUnicas;
+  }
+
+  async getUbicaciones() {
+    const espacios = await this.repo.find({
+      select: ["ubicacion"],
+      order: { ubicacion: "ASC" }
+    });
+    
+    const ubicacionesUnicas = [...new Set(espacios.map(e => e.ubicacion))];
+    return ubicacionesUnicas;
+  }
+
+
 }
 
 module.exports = new EspacioService();

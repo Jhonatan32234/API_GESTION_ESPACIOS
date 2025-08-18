@@ -26,6 +26,78 @@ router.get("/", authMiddleware(["administrador"]), espacioController.getAll);
 
 /**
  * @swagger
+ * /api/espacios/tipos:
+ *   get:
+ *     summary: Obtener todos los tipos de espacio
+ *     tags: [Espacios]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de tipos de espacio únicos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ */
+router.get(
+  "/tipos",
+  authMiddleware(["administrador", "docente"]),
+  espacioController.getTipos
+);
+
+/**
+ * @swagger
+ * /api/espacios/categorias:
+ *   get:
+ *     summary: Obtener todas las categorías de espacio
+ *     tags: [Espacios]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de categorías únicas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ */
+router.get(
+  "/categorias",
+  authMiddleware(["administrador", "docente"]),
+  espacioController.getCategorias
+);
+
+/**
+ * @swagger
+ * /api/espacios/ubicaciones:
+ *   get:
+ *     summary: Obtener todas las ubicaciones de los espacios
+ *     tags: [Espacios]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de ubicaciones únicas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ */
+router.get(
+  "/ubicaciones",
+  authMiddleware(["administrador", "docente"]),
+  espacioController.getUbicaciones
+);
+
+/**
+ * @swagger
  * /api/espacios/{id}:
  *   get:
  *     summary: Obtener espacio por ID
