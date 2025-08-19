@@ -59,6 +59,15 @@ class MateriaService {
   async delete(id) {
     return await this.repo.delete(id);
   }
+
+  async getByPlanId(plan_id) {
+  return await this.repo.find({
+    where: { plan: { plan_id } },
+    relations: ["plan"],
+    select: ["materia_id", "nombre", "codigo_materia", "nivel"]
+  });
+}
+
 }
 
 module.exports = new MateriaService();

@@ -26,6 +26,36 @@ router.get("/", authMiddleware(["administrador"]), espacioController.getAll);
 
 /**
  * @swagger
+ * /api/espacios/ubicacion/{ubicacion}:
+ *   get:
+ *     summary: Obtener espacios por ubicación
+ *     tags: [Espacios]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ubicacion
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nombre de la ubicación
+ *     responses:
+ *       200:
+ *         description: Lista de espacios en la ubicación indicada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Espacio'
+ *       404:
+ *         description: No se encontraron espacios en esa ubicación
+ */
+router.get("/ubicacion/:ubicacion", authMiddleware(["administrador", "docente"]), espacioController.getByUbicacion);
+
+
+/**
+ * @swagger
  * /api/espacios/tipos:
  *   get:
  *     summary: Obtener todos los tipos de espacio
@@ -42,11 +72,7 @@ router.get("/", authMiddleware(["administrador"]), espacioController.getAll);
  *               items:
  *                 type: string
  */
-router.get(
-  "/tipos",
-  authMiddleware(["administrador", "docente"]),
-  espacioController.getTipos
-);
+router.get("/tipos", authMiddleware(["administrador", "docente"]), espacioController.getTipos);
 
 /**
  * @swagger
@@ -66,11 +92,7 @@ router.get(
  *               items:
  *                 type: string
  */
-router.get(
-  "/categorias",
-  authMiddleware(["administrador", "docente"]),
-  espacioController.getCategorias
-);
+router.get("/categorias", authMiddleware(["administrador", "docente"]), espacioController.getCategorias);
 
 /**
  * @swagger
@@ -90,11 +112,7 @@ router.get(
  *               items:
  *                 type: string
  */
-router.get(
-  "/ubicaciones",
-  authMiddleware(["administrador", "docente"]),
-  espacioController.getUbicaciones
-);
+router.get("/ubicaciones", authMiddleware(["administrador", "docente"]), espacioController.getUbicaciones);
 
 /**
  * @swagger

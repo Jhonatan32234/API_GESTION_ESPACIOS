@@ -129,4 +129,26 @@ router.put("/:id", authMiddleware(["administrador"]), materiaController.update);
  */
 router.delete("/:id", authMiddleware(["administrador"]), materiaController.delete);
 
+/**
+ * @swagger
+ * /api/materias/plan/{plan_id}:
+ *   get:
+ *     summary: Obtener todas las materias de un plan de estudios
+ *     tags: [Materias]
+ *     parameters:
+ *       - in: path
+ *         name: plan_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del plan de estudio
+ *     responses:
+ *       200:
+ *         description: Lista de materias del plan
+ *       404:
+ *         description: No se encontraron materias
+ */
+router.get("/plan/:plan_id", authMiddleware(["administrador"]), materiaController.getByPlanId);
+
+
 module.exports = router;

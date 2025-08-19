@@ -9,6 +9,7 @@ module.exports = new EntitySchema({
     fecha_inicio: { type: "date" },
     fecha_fin: { type: "date" },
     anio: { type: "smallint" },
-    tipo_periodo: { type: "varchar", length: 30 }
+    tipo_periodo: { type: "varchar", length: 30 },
+    activo: { type: "boolean", default: true } 
   }
 });

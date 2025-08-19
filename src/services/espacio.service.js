@@ -58,6 +58,13 @@ class EspacioService {
     return ubicacionesUnicas;
   }
 
+  async getByUbicacion(ubicacion) {
+  return await this.repo.find({
+    where: { ubicacion },
+    order: { nombre: "ASC" }
+  });
+  }
+
 
 }
 

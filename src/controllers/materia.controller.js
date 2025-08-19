@@ -33,6 +33,18 @@ class MateriaController {
     await materiaService.delete(req.params.id);
     res.status(204).send();
   }
+
+  async getByPlanId(req, res) {
+  const { plan_id } = req.params;
+  const materias = await materiaService.getByPlanId(plan_id);
+
+  if (!materias || materias.length === 0) {
+    return res.status(404).json({ mensaje: "No se encontraron materias para este plan" });
+  }
+
+  res.json(materias);
+}
+
 }
 
 module.exports = new MateriaController();

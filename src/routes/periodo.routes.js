@@ -104,7 +104,7 @@ router.put("/:id", authMiddleware(["administrador"]), periodoController.update);
  * @swagger
  * /api/periodos/{id}:
  *   delete:
- *     summary: Eliminar periodo
+ *     summary: Marcar un periodo como inactivo
  *     tags: [Periodos]
  *     parameters:
  *       - in: path
@@ -114,8 +114,10 @@ router.put("/:id", authMiddleware(["administrador"]), periodoController.update);
  *         required: true
  *         description: ID del periodo
  *     responses:
- *       204:
- *         description: Periodo eliminado
+ *       200:
+ *         description: Periodo marcado como inactivo
+ *       404:
+ *         description: No encontrado
  */
 router.delete("/:id", authMiddleware(["administrador"]), periodoController.delete);
 

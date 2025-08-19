@@ -1,8 +1,14 @@
 const AppDataSource = require("../config/ormconfig"); 
 const nodemailer = require("nodemailer"); // 👈 necesitas instalarlo con npm i nodemailer
 
+const user_email = process.env.USER_EMAIL || ""
+const user_pass = process.env.USER_PASSWORD || ""
+const smtp_server = process.env.SMTP_SERVER || ""
+const smtp_port = process.env.SMTP_PORT || 587
 
 class SolicitudService {
+
+  
 
   async insertarSolicitudNormal({
   usuario_id,
@@ -50,18 +56,23 @@ class SolicitudService {
   return notifications;
 }
 
-// Método que no depende de envs, solo del correo del destinatario
+
+
 async enviarCorreoDirecto(destinatario, asunto, mensaje) {
   const transporter = nodemailer.createTransport({
-    host: "smtp.ids.upchiapas.edu.mx", // o smtp institucional
-    port: 587,
-    secure: false
-    
+    host: `${smtp_server}`, 
+    port: smtp_port,
+    secure: false,
+    auth:{
+      user: user_email,
+      pass: user_pass
+    }
+
   });
 
   await transporter.sendMail({
-    from: `"Gestión de Espacios" <no-reply@tu-dominio.com>`, // remitente genérico
-    to: destinatario, // correo del usuario o admin recibido de la DB
+    from: `"Gestión de Espacios" <${user_email}>`, 
+    to: destinatario, 
     subject: asunto,
     text: mensaje
   });
@@ -249,7 +260,33 @@ async getSolicitudesPorSemana(periodo_id, mes, anio) {
     console.error('Error en getSolicitudesPorSemana:', error);
     throw new Error('Error al obtener las solicitudes semanales: ' + error.message);
   }
+  }
+
+  async getSolicitudes() {
+  const result = await AppDataSource.query(`
+    SELECT 
+      s.solicitud_id,
+      u.nombre AS usuario,
+      e.nombre AS espacio,
+      e.ubicacion AS ubicacion,
+      p.nombre AS periodo,
+      m.nombre AS materia,
+      pe.nombre_carrera AS plan_estudio,
+      s.grupo,
+      s.motivo,
+      s.estado
+    FROM solicitud s
+    LEFT JOIN usuario u ON u.usuario_id = s.usuario_id
+    LEFT JOIN espacio e ON e.espacio_id = s.espacio_id
+    LEFT JOIN periodo p ON p.periodo_id = s.periodo_id
+    LEFT JOIN materia m ON m.materia_id = s.materia_id
+    LEFT JOIN plan_estudio pe ON pe.plan_id = m.plan_id
+    ORDER BY s.fecha_creacion DESC
+  `);
+
+  return result;
 }
+
 }
 
 module.exports = new SolicitudService();

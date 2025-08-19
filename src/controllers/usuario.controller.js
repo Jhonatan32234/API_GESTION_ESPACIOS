@@ -28,17 +28,22 @@ class UsuarioController {
   }
 
   async login(req, res) {
-    const { email, contrasena } = req.body;
-    const usuario = await usuarioService.login(email, contrasena);
+  const { email, contrasena } = req.body;
+  const usuario = await usuarioService.login(email, contrasena);
 
-    if (!usuario) {
-      return res.status(401).json({ mensaje: "Credenciales incorrectas" });
-    }
-
-    const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
-    res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "strict" });
-    res.json({ mensaje: "Login exitoso" });
+  if (!usuario) {
+    return res.status(401).json({ mensaje: "Credenciales incorrectas" });
   }
+
+  const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
+  res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "strict" });
+
+  res.json({
+    mensaje: "Login exitoso",
+    usuario
+  });
+}
+
 }
 
 module.exports = new UsuarioController();

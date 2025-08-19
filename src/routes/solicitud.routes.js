@@ -136,11 +136,49 @@ router.get("/calendario", authMiddleware(["administrador", "docente"]), solicitu
  *       400:
  *         description: Falta algún parámetro requerido
  */
-router.get(
-  "/semanal",
-  authMiddleware(["administrador", "docente"]),
-  solicitudController.getSolicitudesPorSemana
-);
+router.get("/semanal", authMiddleware(["administrador", "docente"]), solicitudController.getSolicitudesPorSemana);
+
+/**
+ * @swagger
+ * /api/solicitudes/:
+ *   get:
+ *     summary: Obtener todas las solicitudes
+ *     tags: [Solicitudes]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de solicitudes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   solicitud_id:
+ *                     type: integer
+ *                   usuario:
+ *                     type: string
+ *                   espacio:
+ *                     type: string
+ *                   ubicacion:
+ *                     type: string
+ *                   periodo:
+ *                     type: string
+ *                   materia:
+ *                     type: string
+ *                   plan_estudio:
+ *                     type: string
+ *                   grupo:
+ *                     type: string
+ *                   motivo:
+ *                     type: string
+ *                   estado:
+ *                     type: string
+ */
+router.get("/", authMiddleware(["administrador", "docente"]),  solicitudController.getSolicitudes);
+
 
 
 module.exports = router;

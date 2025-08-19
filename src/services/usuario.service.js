@@ -37,12 +37,26 @@ class UsuarioService {
   }
 
   async login(email, contrasena) {
-    const usuario = await this.repo.findOneBy({ email });
-    if (!usuario) return null;
+  const usuario = await this.repo.findOne({
+    where: { email },
+    select: ["usuario_id", "nombre", "apellido", "apellido2", "rol", "contrasena"] // incluir contrasena para comparar
+  });
 
-    const match = await bcrypt.compare(contrasena, usuario.contrasena);
-    return match ? usuario : null;
-  }
+  if (!usuario) return null;
+
+  const match = await bcrypt.compare(contrasena, usuario.contrasena);
+  if (!match) return null;
+
+  // Devolvemos solo lo necesario
+  return {
+    usuario_id: usuario.usuario_id,
+    nombre: usuario.nombre,
+    apellido: usuario.apellido,
+    apellido2: usuario.apellido2,
+    rol: usuario.rol
+  };
+}
+
 }
 
 module.exports = new UsuarioService();

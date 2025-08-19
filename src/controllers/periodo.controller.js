@@ -31,9 +31,13 @@ class PeriodoController {
   }
 
   async delete(req, res) {
-    await periodoService.delete(req.params.id);
-    res.status(204).send();
+  const result = await periodoService.delete(req.params.id);
+  if (result.error) {
+    return res.status(404).json({ mensaje: result.error });
   }
+  res.status(200).json(result); 
+}
+
 }
 
 module.exports = new PeriodoController();

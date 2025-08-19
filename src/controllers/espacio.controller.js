@@ -41,6 +41,18 @@ class EspacioController {
     await espacioService.delete(req.params.id);
     res.status(204).send();
   }
+
+  async getByUbicacion(req, res) {
+  const { ubicacion } = req.params;
+  const espacios = await espacioService.getByUbicacion(ubicacion);
+  
+  if (!espacios || espacios.length === 0) {
+    return res.status(404).json({ mensaje: "No se encontraron espacios en esa ubicación" });
+  }
+
+  res.json(espacios);
+  }
+
 }
 
 module.exports = new EspacioController();

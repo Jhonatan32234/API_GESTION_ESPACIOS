@@ -49,6 +49,16 @@ class SolicitudController {
   }
 }
 
+async getSolicitudes(req, res) {
+  try {
+    const solicitudes = await solicitudService.getSolicitudes();
+    res.json(solicitudes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes" });
+  }
+}
+  
 }
 
 module.exports = new SolicitudController();
