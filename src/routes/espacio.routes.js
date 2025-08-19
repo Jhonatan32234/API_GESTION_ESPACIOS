@@ -26,93 +26,24 @@ router.get("/", authMiddleware(["administrador"]), espacioController.getAll);
 
 /**
  * @swagger
- * /api/espacios/ubicacion/{ubicacion}:
+ * /api/espacios/ubicacion/{ubicacionId}/solicitudes:
  *   get:
- *     summary: Obtener espacios por ubicación
+ *     summary: Obtener todas las solicitudes por ubicación
  *     tags: [Espacios]
- *     security:
- *       - cookieAuth: []
  *     parameters:
  *       - in: path
- *         name: ubicacion
+ *         name: ubicacionId
  *         required: true
  *         schema:
- *           type: string
- *         description: Nombre de la ubicación
+ *           type: integer
+ *         description: ID de la ubicación
  *     responses:
  *       200:
- *         description: Lista de espacios en la ubicación indicada
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Espacio'
+ *         description: Lista de solicitudes para la ubicación indicada
  *       404:
- *         description: No se encontraron espacios en esa ubicación
+ *         description: No se encontraron solicitudes
  */
-router.get("/ubicacion/:ubicacion", authMiddleware(["administrador", "docente"]), espacioController.getByUbicacion);
-
-
-/**
- * @swagger
- * /api/espacios/tipos:
- *   get:
- *     summary: Obtener todos los tipos de espacio
- *     tags: [Espacios]
- *     security:
- *       - cookieAuth: []
- *     responses:
- *       200:
- *         description: Lista de tipos de espacio únicos
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: string
- */
-router.get("/tipos", authMiddleware(["administrador", "docente"]), espacioController.getTipos);
-
-/**
- * @swagger
- * /api/espacios/categorias:
- *   get:
- *     summary: Obtener todas las categorías de espacio
- *     tags: [Espacios]
- *     security:
- *       - cookieAuth: []
- *     responses:
- *       200:
- *         description: Lista de categorías únicas
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: string
- */
-router.get("/categorias", authMiddleware(["administrador", "docente"]), espacioController.getCategorias);
-
-/**
- * @swagger
- * /api/espacios/ubicaciones:
- *   get:
- *     summary: Obtener todas las ubicaciones de los espacios
- *     tags: [Espacios]
- *     security:
- *       - cookieAuth: []
- *     responses:
- *       200:
- *         description: Lista de ubicaciones únicas
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: string
- */
-router.get("/ubicaciones", authMiddleware(["administrador", "docente"]), espacioController.getUbicaciones);
+router.get("/ubicacion/:ubicacionId/solicitudes", authMiddleware(["administrador", "docente"]), espacioController.getSolicitudesByUbicacion);
 
 /**
  * @swagger

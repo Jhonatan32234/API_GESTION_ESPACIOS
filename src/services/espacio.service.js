@@ -28,44 +28,14 @@ class EspacioService {
     return await this.repo.delete(id);
   }
 
-  async getTipos() {
-    const espacios = await this.repo.find({
-      select: ["tipo"],
-      order: { tipo: "ASC" }
-    });
-    
-    const tiposUnicos = [...new Set(espacios.map(e => e.tipo))];
-    return tiposUnicos;
+  async getSolicitudesByUbicacion(ubicacionId) {
+    return await this.solicitudRepo
+      .createQueryBuilder("solicitud")
+      .innerJoinAndSelect("solicitud.espacio", "espacio")
+      .innerJoinAndSelect("espacio.ubicacion", "ubicacion")
+      .where("ubicacion.ubicacion_id = :ubicacionId", { ubicacionId })
+      .getMany();
   }
-
-  async getCategorias() {
-    const espacios = await this.repo.find({
-      select: ["categoria"],
-      order: { categoria: "ASC" }
-    });
-    
-    const categoriasUnicas = [...new Set(espacios.map(e => e.categoria))];
-    return categoriasUnicas;
-  }
-
-  async getUbicaciones() {
-    const espacios = await this.repo.find({
-      select: ["ubicacion"],
-      order: { ubicacion: "ASC" }
-    });
-    
-    const ubicacionesUnicas = [...new Set(espacios.map(e => e.ubicacion))];
-    return ubicacionesUnicas;
-  }
-
-  async getByUbicacion(ubicacion) {
-  return await this.repo.find({
-    where: { ubicacion },
-    order: { nombre: "ASC" }
-  });
-  }
-
-
 }
 
 module.exports = new EspacioService();

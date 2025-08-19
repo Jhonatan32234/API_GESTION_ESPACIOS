@@ -6,21 +6,16 @@ class EspacioController {
     res.json(espacios);
   }
 
-  async getTipos(req, res) {
-    const tipos = await espacioService.getTipos();
-    res.json(tipos);
-  }
+  async getSolicitudesByUbicacion(req, res) {
+    const { ubicacionId } = req.params;
+    const solicitudes = await espacioService.getSolicitudesByUbicacion(ubicacionId);
 
-  async getCategorias(req, res) {
-    const categorias = await espacioService.getCategorias();
-    res.json(categorias);
-  }
+    if (!solicitudes.length) {
+      return res.status(404).json({ mensaje: "No se encontraron solicitudes para esta ubicación" });
+    }
 
-  async getUbicaciones(req, res) {
-  const ubicaciones = await espacioService.getUbicaciones();
-  res.json(ubicaciones);
+    res.json(solicitudes);
   }
-
 
   async getById(req, res) {
     const espacio = await espacioService.getById(req.params.id);
@@ -41,18 +36,6 @@ class EspacioController {
     await espacioService.delete(req.params.id);
     res.status(204).send();
   }
-
-  async getByUbicacion(req, res) {
-  const { ubicacion } = req.params;
-  const espacios = await espacioService.getByUbicacion(ubicacion);
-  
-  if (!espacios || espacios.length === 0) {
-    return res.status(404).json({ mensaje: "No se encontraron espacios en esa ubicación" });
-  }
-
-  res.json(espacios);
-  }
-
 }
 
 module.exports = new EspacioController();

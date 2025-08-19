@@ -13,6 +13,7 @@ const espacioRoutes = require("./src/routes/espacio.routes");
 const inventarioRoutes = require("./src/routes/inventario.routes");
 const solicitudRoutes = require("./src/routes/solicitud.routes");
 const plan_estudio = require("./src/routes/plan_estudio.routes");
+const ubicacion = require("./src/routes/ubicacion.routes")
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api/espacios", espacioRoutes);
 app.use("/api/inventario", inventarioRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/planes", plan_estudio);
+app.use("/api/ubicaciones", ubicacion);
 app.use("/api/auth", authRoutes);
 
 AppDataSource.initialize()
