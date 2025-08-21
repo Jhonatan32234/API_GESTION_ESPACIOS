@@ -54,6 +54,54 @@ const authMiddleware = require("../middlewares/auth.middleware");
  */
 router.post("/normal", authMiddleware(["administrador", "docente"]), solicitudController.insertarSolicitudNormal);
 
+
+/**
+ * @swagger
+ * /api/solicitudes/especial:
+ *   post:
+ *     summary: Insertar una solicitud especial
+ *     tags: [Solicitudes]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               usuario_id:
+ *                 type: integer
+ *               espacio_id:
+ *                 type: integer
+ *               periodo_id:
+ *                 type: integer
+ *               materia_id:
+ *                 type: integer
+ *               grupo:
+ *                 type: string
+ *               motivo:
+ *                 type: string
+ *               cantidad_asistentes:
+ *                 type: integer
+ *               fecha:
+ *                 type: string
+ *                 format: date
+ *               hora_inicio:
+ *                 type: string
+ *                 example: "08:00:00"
+ *               hora_fin:
+ *                 type: string
+ *                 example: "10:00:00"
+ *     responses:
+ *       201:
+ *         description: Solicitud especial insertada correctamente
+ *       400:
+ *         description: Error en los datos enviados
+ */
+router.post("/especial", authMiddleware(["administrador", "docente"]), solicitudController.insertarSolicitudEspecial);
+
+
 /**
  * @swagger
  * /api/solicitudes/aprobar/{id}:

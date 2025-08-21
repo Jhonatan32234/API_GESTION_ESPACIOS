@@ -78,6 +78,53 @@ async enviarCorreoDirecto(destinatario, asunto, mensaje) {
   });
 }
 
+async insertarSolicitudEspecial({
+  usuario_id,
+  espacio_id,
+  periodo_id,
+  materia_id,
+  grupo,
+  motivo,
+  cantidad_asistentes,
+  fecha,
+  hora_inicio,
+  hora_fin
+}) {
+  // Llamada al procedimiento almacenado
+  const result = await AppDataSource.query(
+    `CALL insertar_solicitud_especial(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      usuario_id,
+      espacio_id,
+      periodo_id,
+      materia_id,
+      grupo,
+      motivo,
+      cantidad_asistentes,
+      fecha,
+      hora_inicio,
+      hora_fin
+    ]
+  );
+
+  // El procedimiento devuelve las notificaciones en caso de conflicto
+  const notifications = result[0] || [];
+
+  // Enviar correos a los destinatarios en las notificaciones
+  for (const notif of notifications) {
+    if (notif.destinatario_email) {
+      await this.enviarCorreoDirecto(
+        notif.destinatario_email,
+        notif.asunto || "Notificación sobre solicitud especial",
+        notif.mensaje
+      );
+    }
+  }
+
+  return notifications;
+}
+
+
 
   async aprobarSolicitud(solicitud_id) {
     await AppDataSource.query(

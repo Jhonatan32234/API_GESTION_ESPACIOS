@@ -12,6 +12,17 @@ class SolicitudController {
     }
   }
 
+  async insertarSolicitudEspecial(req, res) {
+  try {
+    const notifications = await solicitudService.insertarSolicitudEspecial(req.body);
+    res.status(201).json({ mensaje: "Solicitud especial insertada correctamente", notifications });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: error.message });
+  }
+}
+
+
   async aprobarSolicitud(req, res) {
     try {
       const solicitud_id = parseInt(req.params.id);
