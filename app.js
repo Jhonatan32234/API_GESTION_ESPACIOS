@@ -12,8 +12,11 @@ const materiaRoutes = require("./src/routes/materia.routes");
 const espacioRoutes = require("./src/routes/espacio.routes");
 const inventarioRoutes = require("./src/routes/inventario.routes");
 const solicitudRoutes = require("./src/routes/solicitud.routes");
-const plan_estudio = require("./src/routes/plan_estudio.routes");
-const ubicacion = require("./src/routes/ubicacion.routes")
+const plan_estudioRoutes = require("./src/routes/plan_estudio.routes");
+const ubicacionRoutes = require("./src/routes/ubicacion.routes")
+const reservaRoutes = require("./src/routes/reserva.routes")
+const solicitud_especialRoutes = require("./src/routes/solicitud_especial.routes")
+const conflicto_recurrenteRoutes = require("./src/routes/conflicto_recurrente.routes")  
 
 const app = express();
 
@@ -36,8 +39,11 @@ app.use("/api/materias", materiaRoutes);
 app.use("/api/espacios", espacioRoutes);
 app.use("/api/inventario", inventarioRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
-app.use("/api/planes", plan_estudio);
-app.use("/api/ubicaciones", ubicacion);
+app.use("/api/planes", plan_estudioRoutes);
+app.use("/api/ubicaciones", ubicacionRoutes);
+app.use("/api/reservas", reservaRoutes);
+app.use("/api/solicitud_especial", solicitud_especialRoutes);
+app.use("/api/conflicto_recurrente", conflicto_recurrenteRoutes);
 app.use("/api/auth", authRoutes);
 
 AppDataSource.initialize()

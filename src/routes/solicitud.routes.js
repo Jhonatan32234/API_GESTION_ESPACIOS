@@ -57,56 +57,39 @@ router.post("/normal", authMiddleware(["administrador", "docente"]), solicitudCo
 
 /**
  * @swagger
- * /api/solicitudes/especial:
+ * /api/solicitudes/aprobar/{solicitud_id}/{usuario_id}:
  *   post:
- *     summary: Insertar una solicitud especial
+ *     summary: Aprobar una solicitud existente
  *     tags: [Solicitudes]
  *     security:
  *       - cookieAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               usuario_id:
- *                 type: integer
- *               espacio_id:
- *                 type: integer
- *               periodo_id:
- *                 type: integer
- *               materia_id:
- *                 type: integer
- *               grupo:
- *                 type: string
- *               motivo:
- *                 type: string
- *               cantidad_asistentes:
- *                 type: integer
- *               fecha:
- *                 type: string
- *                 format: date
- *               hora_inicio:
- *                 type: string
- *                 example: "08:00:00"
- *               hora_fin:
- *                 type: string
- *                 example: "10:00:00"
+ *     parameters:
+ *       - in: path
+ *         name: solicitud_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID de la solicitud a aprobar
+ *       - in: path
+ *         name: usuario_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del usuario que aprueba la solicitud
  *     responses:
- *       201:
- *         description: Solicitud especial insertada correctamente
- *       400:
- *         description: Error en los datos enviados
+ *       200:
+ *         description: Solicitud aprobada correctamente
+ *       404:
+ *         description: Solicitud no encontrada
  */
-router.post("/especial", authMiddleware(["administrador", "docente"]), solicitudController.insertarSolicitudEspecial);
+router.post("/aprobar/:solicitud_id/:usuario_id", authMiddleware(["administrador"]), solicitudController.aprobarSolicitud);
 
 
 /**
  * @swagger
- * /api/solicitudes/aprobar/{id}:
- *   post:
- *     summary: Aprobar una solicitud existente
+ * /api/solicitudes/rechazar/{id}:
+ *   put:
+ *     summary: Rechazar una solicitud normal
  *     tags: [Solicitudes]
  *     security:
  *       - cookieAuth: []
@@ -116,14 +99,14 @@ router.post("/especial", authMiddleware(["administrador", "docente"]), solicitud
  *         schema:
  *           type: integer
  *         required: true
- *         description: ID de la solicitud a aprobar
+ *         description: ID de la solicitud a rechazar
  *     responses:
  *       200:
- *         description: Solicitud aprobada correctamente
- *       404:
- *         description: Solicitud no encontrada
+ *         description: Solicitud rechazada correctamente
+ *       500:
+ *         description: Error al procesar la solicitud
  */
-router.post("/aprobar/:id", authMiddleware(["administrador"]), solicitudController.aprobarSolicitud);
+router.put("/rechazar/:id", authMiddleware(["administrador"]), solicitudController.rechazarNormal);
 
 
 /**
@@ -188,9 +171,9 @@ router.get("/semanal", authMiddleware(["administrador", "docente"]), solicitudCo
 
 /**
  * @swagger
- * /api/solicitudes/:
+ * /api/solicitudes/aprobadas:
  *   get:
- *     summary: Obtener todas las solicitudes
+ *     summary: Obtener todas las solicitudes aprobadas
  *     tags: [Solicitudes]
  *     security:
  *       - cookieAuth: []
@@ -225,8 +208,21 @@ router.get("/semanal", authMiddleware(["administrador", "docente"]), solicitudCo
  *                   estado:
  *                     type: string
  */
-router.get("/", authMiddleware(["administrador", "docente"]),  solicitudController.getSolicitudes);
+router.get("/aprobadas", authMiddleware(["administrador", "docente"]),  solicitudController.getSolicitudes);
 
+/**
+ * @swagger
+ * /api/solicitudes/pend-rech:
+ *   get:
+ *     summary: Obtener solicitudes pendientes y rechazadas
+ *     tags: [Solicitudes]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de solicitudes pendientes y rechazadas
+ */
+router.get("/pend-rech", authMiddleware(["administrador", "docente"]), solicitudController.getSolicitudesPendRech);
 
 
 module.exports = router;

@@ -18,7 +18,6 @@ module.exports = new EntitySchema({
       nullable: true
     }
   },
-  // Validación antes de guardar
   listeners: {
     beforeInsert: (entity) => {
       if (entity.hora_inicio >= entity.hora_fin) {

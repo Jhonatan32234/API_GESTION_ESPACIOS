@@ -28,13 +28,11 @@ class EspacioService {
     return await this.repo.delete(id);
   }
 
-  async getSolicitudesByUbicacion(ubicacionId) {
-    return await this.solicitudRepo
-      .createQueryBuilder("solicitud")
-      .innerJoinAndSelect("solicitud.espacio", "espacio")
-      .innerJoinAndSelect("espacio.ubicacion", "ubicacion")
-      .where("ubicacion.ubicacion_id = :ubicacionId", { ubicacionId })
-      .getMany();
+  async getEspaciosByUbicacion(ubicacionId) {
+    return await this.repo.find({
+      where: { ubicacion: { ubicacion_id: ubicacionId } }, // filtrando por FK
+      relations: ["ubicacion"], // incluir datos de la ubicación
+    });
   }
 }
 

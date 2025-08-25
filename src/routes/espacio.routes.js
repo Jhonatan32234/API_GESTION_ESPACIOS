@@ -24,12 +24,15 @@ const authMiddleware = require("../middlewares/auth.middleware");
  */
 router.get("/", authMiddleware(["administrador"]), espacioController.getAll);
 
+
 /**
  * @swagger
- * /api/espacios/ubicacion/{ubicacionId}/solicitudes:
+ * /api/espacios/ubicacion/{ubicacionId}:
  *   get:
- *     summary: Obtener todas las solicitudes por ubicación
+ *     summary: Obtener todos los espacios de una ubicación específica
  *     tags: [Espacios]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: ubicacionId
@@ -39,11 +42,18 @@ router.get("/", authMiddleware(["administrador"]), espacioController.getAll);
  *         description: ID de la ubicación
  *     responses:
  *       200:
- *         description: Lista de solicitudes para la ubicación indicada
+ *         description: Lista de espacios pertenecientes a la ubicación indicada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Espacio'
  *       404:
- *         description: No se encontraron solicitudes
+ *         description: No se encontraron espacios para la ubicación indicada
  */
-router.get("/ubicacion/:ubicacionId/solicitudes", authMiddleware(["administrador", "docente"]), espacioController.getSolicitudesByUbicacion);
+router.get("/ubicacion/:ubicacionId", authMiddleware(["administrador", "docente"]), espacioController.getEspaciosByUbicacion);
+
 
 /**
  * @swagger

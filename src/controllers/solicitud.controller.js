@@ -12,27 +12,34 @@ class SolicitudController {
     }
   }
 
-  async insertarSolicitudEspecial(req, res) {
+
+
+async aprobarSolicitud(req, res) {
   try {
-    const notifications = await solicitudService.insertarSolicitudEspecial(req.body);
-    res.status(201).json({ mensaje: "Solicitud especial insertada correctamente", notifications });
+    const solicitud_id = parseInt(req.params.solicitud_id);
+    const usuario_id = parseInt(req.params.usuario_id);
+
+    await solicitudService.aprobarSolicitud(solicitud_id, usuario_id);
+
+    res.status(200).json({ mensaje: "Solicitud aprobada correctamente" });
   } catch (error) {
     console.error(error);
     res.status(400).json({ error: error.message });
   }
 }
 
+async rechazarNormal(req, res) {
+    const { id } = req.params;
 
-  async aprobarSolicitud(req, res) {
     try {
-      const solicitud_id = parseInt(req.params.id);
-      await solicitudService.aprobarSolicitud(solicitud_id);
-      res.status(200).json({ mensaje: "Solicitud aprobada correctamente" });
+      await solicitudService.rechazarSolicitudNormal(id);
+      res.json({ mensaje: `Solicitud con ID ${id} rechazada exitosamente.` });
     } catch (error) {
       console.error(error);
-      res.status(400).json({ error: error.message });
+      res.status(500).json({ mensaje: "Error al rechazar la solicitud." });
     }
   }
+
 
   async getCalendario(req, res) {
     try {
@@ -61,14 +68,24 @@ class SolicitudController {
 }
 
 async getSolicitudes(req, res) {
-  try {
-    const solicitudes = await solicitudService.getSolicitudes();
-    res.json(solicitudes);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes" });
+    try {
+      const solicitudes = await solicitudService.getSolicitudes();
+      res.json(solicitudes);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes aprobadas" });
+    }
   }
-}
+
+  async getSolicitudesPendRech(req, res) {
+    try {
+      const solicitudes = await solicitudService.getSolicitudesPendRech();
+      res.json(solicitudes);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes pendientes/rechazadas" });
+    }
+  }
   
 }
 

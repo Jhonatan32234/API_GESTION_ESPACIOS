@@ -17,6 +17,13 @@ module.exports = new EntitySchema({
       onDelete: "SET NULL",
       nullable: true
     },
+    solicitud_especial: {
+      type: "many-to-one",
+      target: "SolicitudEspecial",
+      joinColumn: { name: "solicitud_especial_id" },
+      onDelete: "SET NULL",
+      nullable: true
+    },
     espacio: {
       type: "many-to-one",
       target: "Espacio",

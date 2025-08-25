@@ -6,16 +6,17 @@ class EspacioController {
     res.json(espacios);
   }
 
-  async getSolicitudesByUbicacion(req, res) {
-    const { ubicacionId } = req.params;
-    const solicitudes = await espacioService.getSolicitudesByUbicacion(ubicacionId);
+  async getEspaciosByUbicacion(req, res) {
+  const { ubicacionId } = req.params;
+  const espacios = await espacioService.getEspaciosByUbicacion(ubicacionId);
 
-    if (!solicitudes.length) {
-      return res.status(404).json({ mensaje: "No se encontraron solicitudes para esta ubicación" });
-    }
-
-    res.json(solicitudes);
+  if (!espacios.length) {
+    return res.status(404).json({ mensaje: "No se encontraron espacios para esta ubicación" });
   }
+
+  res.json(espacios);
+  }
+
 
   async getById(req, res) {
     const espacio = await espacioService.getById(req.params.id);
