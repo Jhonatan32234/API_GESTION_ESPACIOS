@@ -40,6 +40,7 @@ class UsuarioController {
   // Guardar token en cookie HTTPOnly
   res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "strict" });
 
+  res.cookie("id", usuario.usuario_id, { httpOnly: false, secure: false, sameSite: "strict" });
   // Guardar rol en cookie separada (no HTTPOnly para que sea accesible desde cliente si es necesario)
   res.cookie("rol", usuario.rol, { httpOnly: false, secure: false, sameSite: "strict" });
 
