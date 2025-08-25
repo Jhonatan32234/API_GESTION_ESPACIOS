@@ -172,6 +172,28 @@ router.post("/rechazar/:solicitud_especial_id", authMiddleware(["administrador"]
  */
 router.get("/aprobadas", authMiddleware(["administrador", "docente"]), solicitudEspecialController.listarAprobadas);
 
+/**
+ * @swagger
+ * /api/solicitud_especial/usuario/{usuario_id}/:
+ *   get:
+ *     summary: Obtener todas las solicitudes especiales de un usuario
+ *     tags: [SolicitudEspecial]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuario_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de solicitudes especiales del usuario
+ */
+router.get("/usuario/:usuario_id", authMiddleware(["administrador", "docente"]), solicitudEspecialController.getSolicitudesEspecialesPorUsuario);
+
+
 
 /**
  * @swagger
@@ -212,7 +234,7 @@ router.get("/aprobadas", authMiddleware(["administrador", "docente"]), solicitud
  *                     type: string
  *                     example: "pendiente"
  */
-router.get("/pen-rec", authMiddleware(["administrador"]), solicitudEspecialController.listarPendRech);
+router.get("/pen-rec", authMiddleware(["administrador","docente"]), solicitudEspecialController.listarPendRech);
 
 
 module.exports = router;

@@ -22,7 +22,7 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *       200:
  *         description: Lista de espacios
  */
-router.get("/", authMiddleware(["administrador"]), espacioController.getAll);
+router.get("/", authMiddleware(["administrador","docente"]), espacioController.getAll);
 
 
 /**
@@ -76,7 +76,7 @@ router.get("/ubicacion/:ubicacionId", authMiddleware(["administrador", "docente"
  *       404:
  *         description: Espacio no encontrado
  */
-router.get("/:id", authMiddleware(["administrador"]), espacioController.getById);
+router.get("/:id", authMiddleware(["administrador","docente"]), espacioController.getById);
 
 /**
  * @swagger

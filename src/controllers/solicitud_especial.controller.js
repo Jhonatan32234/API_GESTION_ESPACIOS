@@ -47,6 +47,18 @@ class SolicitudEspecialController {
     }
 }
 
+async getSolicitudesEspecialesPorUsuario(req, res) {
+  try {
+    const usuario_id = parseInt(req.params.usuario_id);
+    const solicitudes = await solicitudEspecialService.getSolicitudesEspecialesPorUsuario(usuario_id);
+    res.json(solicitudes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes especiales del usuario" });
+  }
+}
+
+
   async listarAprobadas(req, res) {
     try {
       const data = await solicitudEspecialService.getSolicitudesEspeciales();

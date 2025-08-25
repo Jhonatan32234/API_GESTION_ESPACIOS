@@ -18,6 +18,32 @@ async rechazarSolicitudNormal(solicitud_id) {
     return result;
   }
 
+async getSolicitudesNormalesPorUsuario(usuario_id) {
+  const result = await AppDataSource.query(`
+    SELECT 
+      s.solicitud_id,
+      s.usuario_id,
+      u.nombre AS usuario,
+      e.nombre AS espacio,
+      p.nombre AS periodo,
+      m.nombre AS materia,
+      s.grupo,
+      s.motivo,
+      s.estado,
+      s.fecha_creacion
+    FROM solicitud s
+    LEFT JOIN usuario u ON u.usuario_id = s.usuario_id
+    LEFT JOIN espacio e ON e.espacio_id = s.espacio_id
+    LEFT JOIN periodo p ON p.periodo_id = s.periodo_id
+    LEFT JOIN materia m ON m.materia_id = s.materia_id
+    WHERE s.usuario_id = ?
+    ORDER BY s.fecha_creacion DESC
+  `, [usuario_id]);
+
+  return result;
+}
+
+
   async insertarSolicitudNormal(data) {
     const result = await AppDataSource.query(
       `CALL insertar_solicitud_normal(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

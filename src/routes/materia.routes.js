@@ -20,7 +20,7 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *       200:
  *         description: Lista de materias
  */
-router.get("/",authMiddleware(["administrador"]), materiaController.getAll);
+router.get("/",authMiddleware(["administrador","docente"]), materiaController.getAll);
 
 /**
  * @swagger
@@ -40,7 +40,7 @@ router.get("/",authMiddleware(["administrador"]), materiaController.getAll);
  *       404:
  *         description: No encontrada
  */
-router.get("/:id", authMiddleware(["administrador"]), materiaController.getById);
+router.get("/:id", authMiddleware(["administrador","docente"]), materiaController.getById);
 
 /**
  * @swagger
@@ -148,7 +148,7 @@ router.delete("/:id", authMiddleware(["administrador"]), materiaController.delet
  *       404:
  *         description: No se encontraron materias
  */
-router.get("/plan/:plan_id", authMiddleware(["administrador"]), materiaController.getByPlanId);
+router.get("/plan/:plan_id", authMiddleware(["administrador","docente"]), materiaController.getByPlanId);
 
 
 module.exports = router;

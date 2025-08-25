@@ -57,6 +57,28 @@ router.post("/normal", authMiddleware(["administrador", "docente"]), solicitudCo
 
 /**
  * @swagger
+ * /api/solicitudes/usuario/{usuario_id}:
+ *   get:
+ *     summary: Obtener todas las solicitudes normales de un usuario
+ *     tags: [Solicitudes]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: usuario_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de solicitudes normales del usuario
+ */
+router.get("/usuario/:usuario_id", authMiddleware(["administrador", "docente"]), solicitudController.getSolicitudesNormalesPorUsuario);
+
+
+/**
+ * @swagger
  * /api/solicitudes/aprobar/{solicitud_id}/{usuario_id}:
  *   post:
  *     summary: Aprobar una solicitud existente

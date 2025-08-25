@@ -22,7 +22,7 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *       200:
  *         description: Lista de elementos
  */
-router.get("/", authMiddleware(["administrador"]), inventarioController.getAll);
+router.get("/", authMiddleware(["administrador","docente"]), inventarioController.getAll);
 
 /**
  * @swagger
@@ -45,7 +45,7 @@ router.get("/", authMiddleware(["administrador"]), inventarioController.getAll);
  *       404:
  *         description: Inventario no encontrado
  */
-router.get("/:id", authMiddleware(["administrador"]), inventarioController.getById);
+router.get("/:id", authMiddleware(["administrador","docente"]), inventarioController.getById);
 
 /**
  * @swagger

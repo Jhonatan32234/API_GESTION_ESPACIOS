@@ -36,6 +36,28 @@ async rechazarSolicitudEspecial(solicitud_especial_id) {
     return result;
 }
 
+async getSolicitudesEspecialesPorUsuario(usuario_id) {
+  const result = await AppDataSource.query(`
+    SELECT 
+      se.solicitud_especial_id,
+      se.usuario_id,
+      u.nombre AS usuario,
+      e.nombre AS espacio,
+      se.fecha,
+      se.hora_inicio,
+      se.hora_fin,
+      se.cantidad_asistentes,
+      se.motivo,
+      se.estado
+    FROM solicitud_especial se
+    LEFT JOIN usuario u ON u.usuario_id = se.usuario_id
+    LEFT JOIN espacio e ON e.espacio_id = se.espacio_id
+    WHERE se.usuario_id = ?
+    ORDER BY se.fecha DESC
+  `, [usuario_id]);
+
+  return result;
+}
 
   async getSolicitudesEspeciales() {
     return await AppDataSource.query(`

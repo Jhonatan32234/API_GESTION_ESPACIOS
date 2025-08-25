@@ -12,6 +12,16 @@ class SolicitudController {
     }
   }
 
+async getSolicitudesNormalesPorUsuario(req, res) {
+  try {
+    const usuario_id = parseInt(req.params.usuario_id);
+    const solicitudes = await solicitudService.getSolicitudesNormalesPorUsuario(usuario_id);
+    res.json(solicitudes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes normales del usuario" });
+  }
+}
 
 
 async aprobarSolicitud(req, res) {
