@@ -4,6 +4,8 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors"); 
 const AppDataSource = require("./src/config/ormconfig");
+const runProcedures = require("./src/config/procQuery"); // 👈 importamos aquí
+
 const { swaggerUi, swaggerSpec } = require("./src/config/swagger");
 const usuarioRoutes = require("./src/routes/usuario.routes");
 const periodoRoutes = require("./src/routes/periodo.routes");
@@ -13,10 +15,10 @@ const espacioRoutes = require("./src/routes/espacio.routes");
 const inventarioRoutes = require("./src/routes/inventario.routes");
 const solicitudRoutes = require("./src/routes/solicitud.routes");
 const plan_estudioRoutes = require("./src/routes/plan_estudio.routes");
-const ubicacionRoutes = require("./src/routes/ubicacion.routes")
-const reservaRoutes = require("./src/routes/reserva.routes")
-const solicitud_especialRoutes = require("./src/routes/solicitud_especial.routes")
-const conflicto_recurrenteRoutes = require("./src/routes/conflicto_recurrente.routes")  
+const ubicacionRoutes = require("./src/routes/ubicacion.routes");
+const reservaRoutes = require("./src/routes/reserva.routes");
+const solicitud_especialRoutes = require("./src/routes/solicitud_especial.routes");
+const conflicto_recurrenteRoutes = require("./src/routes/conflicto_recurrente.routes");  
 
 const app = express();
 
@@ -33,6 +35,7 @@ app.use(cors({
 // Swagger
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Rutas
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/periodos", periodoRoutes);
 app.use("/api/materias", materiaRoutes);
@@ -46,8 +49,12 @@ app.use("/api/solicitud_especial", solicitud_especialRoutes);
 app.use("/api/conflicto_recurrente", conflicto_recurrenteRoutes);
 app.use("/api/auth", authRoutes);
 
+// Inicializar DB + procedimientos
 AppDataSource.initialize()
-  .then(() => console.log("📦 Base de datos conectada"))
+  .then(async () => {
+    console.log("📦 Base de datos conectada");
+    await runProcedures(); // 👈 aquí se migran tus procedures
+  })
   .catch(err => console.error("❌ Error DB:", err));
 
 module.exports = app;

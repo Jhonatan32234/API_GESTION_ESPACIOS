@@ -139,7 +139,7 @@ router.post("/rechazar/:solicitud_especial_id", authMiddleware(["administrador"]
  *     description: Obtiene todas las solicitudes especiales aprobadas. Solo pueden acceder usuarios con rol **administrador** o **docente**.
  *     tags: [SolicitudEspecial]
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Lista de solicitudes aprobadas.
@@ -203,7 +203,7 @@ router.get("/usuario/:usuario_id", authMiddleware(["administrador", "docente"]),
  *     description: Obtiene todas las solicitudes especiales que están en estado **pendiente** o **rechazada**. Solo puede acceder el rol **administrador**.
  *     tags: [SolicitudEspecial]
  *     security:
- *       - bearerAuth: []
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Lista de solicitudes pendientes o rechazadas.

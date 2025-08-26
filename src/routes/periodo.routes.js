@@ -16,6 +16,8 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *   get:
  *     summary: Obtener todos los periodos
  *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Lista de periodos
@@ -28,6 +30,8 @@ router.get("/", authMiddleware(["administrador", "docente"]), periodoController.
  *   get:
  *     summary: Obtener periodo por ID
  *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -49,6 +53,8 @@ router.get("/:id", authMiddleware(["administrador", "docente"]), periodoControll
  *   post:
  *     summary: Crear un nuevo periodo
  *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -81,6 +87,8 @@ router.post("/", authMiddleware(["administrador"]), periodoController.create);
  *   put:
  *     summary: Actualizar periodo
  *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -106,6 +114,8 @@ router.put("/:id", authMiddleware(["administrador"]), periodoController.update);
  *   delete:
  *     summary: Marcar un periodo como inactivo
  *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id

@@ -16,6 +16,8 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *   get:
  *     summary: Obtener todas las materias
  *     tags: [Materias]
+ *     security:
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Lista de materias
@@ -28,6 +30,8 @@ router.get("/",authMiddleware(["administrador","docente"]), materiaController.ge
  *   get:
  *     summary: Obtener materia por ID
  *     tags: [Materias]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -48,6 +52,8 @@ router.get("/:id", authMiddleware(["administrador","docente"]), materiaControlle
  *   post:
  *     summary: Crear materia
  *     tags: [Materias]
+ *     security:
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -82,6 +88,8 @@ router.post("/", authMiddleware(["administrador"]), materiaController.create);
  *   put:
  *     summary: Actualizar materia
  *     tags: [Materias]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -117,6 +125,8 @@ router.put("/:id", authMiddleware(["administrador"]), materiaController.update);
  *   delete:
  *     summary: Eliminar materia
  *     tags: [Materias]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -135,6 +145,8 @@ router.delete("/:id", authMiddleware(["administrador"]), materiaController.delet
  *   get:
  *     summary: Obtener todas las materias de un plan de estudios
  *     tags: [Materias]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: plan_id

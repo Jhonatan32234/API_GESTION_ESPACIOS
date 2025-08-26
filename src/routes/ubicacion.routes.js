@@ -16,6 +16,8 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *   get:
  *     summary: Obtener todas las ubicaciones
  *     tags: [Ubicaciones]
+ *     security:
+ *       - cookieAuth: []
  *     responses:
  *       200:
  *         description: Lista de ubicaciones
@@ -28,6 +30,8 @@ router.get("/", authMiddleware(["administrador", "docente"]), ubicacionControlle
  *   get:
  *     summary: Obtener ubicación por ID
  *     tags: [Ubicaciones]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -49,6 +53,8 @@ router.get("/:id", authMiddleware(["administrador", "docente"]), ubicacionContro
  *   post:
  *     summary: Crear nueva ubicación
  *     tags: [Ubicaciones]
+ *     security:
+ *       - cookieAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -70,6 +76,8 @@ router.post("/", authMiddleware(["administrador"]), ubicacionController.create);
  *   put:
  *     summary: Actualizar ubicación
  *     tags: [Ubicaciones]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -98,6 +106,8 @@ router.put("/:id", authMiddleware(["administrador"]), ubicacionController.update
  *   delete:
  *     summary: Eliminar ubicación
  *     tags: [Ubicaciones]
+ *     security:
+ *       - cookieAuth: []
  *     parameters:
  *       - in: path
  *         name: id
