@@ -1,0 +1,89 @@
+const express = require("express");
+const router = express.Router();
+const reportedanocontroller = require("../controllers/reporte_dano.controller");
+const authMiddleware = require("../middlewares/auth.middleware");
+
+/**
+ * @swagger
+ * tags:
+ *   name: Reporte de Daño
+ *   description: Gestión de reportes de daño
+ */
+
+/**
+ * @swagger
+ * /api/reporte:
+ *   post:
+ *     summary: Insertar un nuevo reporte de daño
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               usuario_id:
+ *                 type: integer
+ *               inventario_id:
+ *                 type: integer
+ *               descripcion:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Reporte insertado correctamente
+ */
+router.post("/", authMiddleware(["administrador", "docente"]), reportedanocontroller.insertarReporte);
+
+/**
+ * @swagger
+ * /api/reporte/pendientes:
+ *   get:
+ *     summary: Obtener reportes pendientes y en proceso
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de reportes pendientes o en proceso
+ */
+router.get("/pendientes", authMiddleware(["administrador", "docente"]), reportedanocontroller.getPendientesEnProceso);
+
+/**
+ * @swagger
+ * /api/reporte/reparados:
+ *   get:
+ *     summary: Obtener reportes reparados
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de reportes que han sido reparados
+ */
+router.get("/reparados", authMiddleware(["administrador", "docente"]), reportedanocontroller.getReparados);
+
+/**
+ * @swagger
+ * /api/reporte/usuario/{id}:
+ *   get:
+ *     summary: Obtener todos los reportes de un usuario
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Lista de reportes del usuario especificado
+ */
+router.get("/usuario/:id", authMiddleware(["administrador", "docente"]), reportedanocontroller.getPorUsuario);
+
+module.exports = router;

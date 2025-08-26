@@ -10,7 +10,8 @@ module.exports = new EntitySchema({
     fecha_completado: { type: "date", nullable: true },
     costo: { type: "decimal", precision: 10, scale: 2, nullable: true },
     descripcion: { type: "text" },
-    estado: { type: "varchar", length: 20, default: "pendiente" }
+    estado: { type: "varchar", length: 20, default: "pendiente" },
+    usuario_id: { type: "int", nullable: false } // obligatorio
   },
   relations: {
     reporte: {
@@ -20,12 +21,12 @@ module.exports = new EntitySchema({
       onDelete: "SET NULL",
       nullable: true
     },
-    espacio: {
+    usuario: {
       type: "many-to-one",
-      target: "Espacio",
-      joinColumn: { name: "espacio_id" },
-      onDelete: "SET NULL",
-      nullable: true
+      target: "Usuario",
+      joinColumn: { name: "usuario_id" },
+      onDelete: "RESTRICT", // no se puede borrar un usuario con mantenimientos
+      nullable: false
     }
   }
 });

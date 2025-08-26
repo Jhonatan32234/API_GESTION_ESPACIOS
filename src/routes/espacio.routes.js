@@ -96,7 +96,7 @@ router.get("/:id", authMiddleware(["administrador","docente"]), espacioControlle
  *               - nombre
  *               - tipo
  *               - categoria
- *               - ubicacion
+ *               - ubicacionId
  *               - capacidad
  *             properties:
  *               nombre:
@@ -107,8 +107,8 @@ router.get("/:id", authMiddleware(["administrador","docente"]), espacioControlle
  *               categoria:
  *                 type: string
  *                 enum: [generica, equipada, tecnica, laboratorio]
- *               ubicacion:
- *                 type: string
+ *               ubicacionId:
+ *                 type: integer
  *               capacidad:
  *                 type: integer
  *               descripcion:

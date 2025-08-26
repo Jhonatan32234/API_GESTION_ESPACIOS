@@ -7,17 +7,22 @@ class EspacioService {
   }
 
   async getAll() {
-    return await this.repo.find();
-  }
+  return await this.repo.find({
+    relations: ["ubicacion"], // incluir la relación de ubicación
+  });
+}
+
 
   async getById(id) {
     return await this.repo.findOneBy({ espacio_id: id });
   }
 
   async create(data) {
-    const nuevo = this.repo.create(data);
-    return await this.repo.save(nuevo);
-  }
+  // data.ubicacion debe ser { ubicacion_id: id }
+  const nuevo = this.repo.create(data);
+  return await this.repo.save(nuevo);
+}
+
 
   async update(id, data) {
     await this.repo.update(id, data);
