@@ -86,4 +86,28 @@ router.get("/reparados", authMiddleware(["administrador", "docente"]), reporteda
  */
 router.get("/usuario/:id", authMiddleware(["administrador", "docente"]), reportedanocontroller.getPorUsuario);
 
+
+/**
+ * @swagger
+ * /api/reporte/rechazar/{reporteId}:
+ *   post:
+ *     summary: Rechazar un reporte de daño
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reporteId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del reporte a rechazar
+ *     responses:
+ *       200:
+ *         description: Reporte rechazado correctamente
+ *       500:
+ *         description: Error al rechazar el reporte
+ */
+router.post("/rechazar/:reporteId", authMiddleware(["administrador"]), reportedanocontroller.rechazarReporte);
+
 module.exports = router;

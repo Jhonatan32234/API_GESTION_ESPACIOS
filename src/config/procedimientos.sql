@@ -71,9 +71,7 @@ BEGIN
         )
         VALUES (
             p_usuario_id, 'solicitud', 
-            CONCAT('Tu solicitud con ID ', v_solicitud_id,
-                   ' presenta un conflicto con la solicitud ID ', v_conflicto_id,
-                   '. Está en espera de resolución.'),
+            'Tu solicitud presenta un conflicto con otra solicitud. Está en espera de resolución.',
             NOW(), FALSE, FALSE, v_solicitud_id, 'solicitud'
         );
     END IF;
@@ -213,7 +211,7 @@ WHERE s_pending.estado = 'pendiente'
 INSERT INTO notificacion(usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo)
 SELECT s.usuario_id, 
        'solicitud', 
-       CONCAT('Tu solicitud con ID ', s.solicitud_id, ' ha sido rechazada debido a conflicto con otra solicitud aprobada.'), 
+       'Tu solicitud ha sido rechazada debido a conflicto con otra solicitud aprobada.', 
        NOW(), 
        FALSE, 
        FALSE, 
@@ -228,7 +226,7 @@ WHERE s.estado = 'rechazada'
         WHERE n.usuario_id = s.usuario_id
           AND n.relacion_id = s.solicitud_id
           AND n.relacion_tipo = 'solicitud'
-          AND n.mensaje LIKE 'Tu solicitud con ID % ha sido rechazada%'
+          AND n.mensaje LIKE 'Tu solicitud ha sido rechazada'
   );
 
 
@@ -252,7 +250,7 @@ WHERE s.estado = 'rechazada'
                 WHERE usuario_id = v_usuario_id
                   AND relacion_id = p_solicitud_id
                   AND relacion_tipo = 'solicitud'
-                  AND mensaje LIKE 'Tu solicitud fue aprobada pero está en espera%'
+                  AND mensaje LIKE 'Tu solicitud fue aprobada pero está en espera'
             ) THEN
                 INSERT INTO notificacion(usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo)
                 VALUES (v_usuario_id, 'solicitud', 'Tu solicitud fue aprobada pero está en espera de resolución de conflicto con otra solicitud.', NOW(), FALSE, FALSE, p_solicitud_id, 'solicitud');
@@ -264,7 +262,7 @@ WHERE s.estado = 'rechazada'
                 WHERE usuario_id = p_admin_id
                   AND relacion_id = p_solicitud_id
                   AND relacion_tipo = 'solicitud'
-                  AND mensaje LIKE 'Has aprobado una solicitud en conflicto%'
+                  AND mensaje LIKE 'Has aprobado una solicitud en conflicto'
             ) THEN
                 INSERT INTO notificacion(usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo)
                 VALUES (p_admin_id, 'solicitud', 'Has aprobado una solicitud en conflicto, revisa y resuelve el error.', NOW(), FALSE, FALSE, p_solicitud_id, 'solicitud');
@@ -273,6 +271,7 @@ WHERE s.estado = 'rechazada'
 
     END IF;
 END;
+
 
 DROP PROCEDURE IF EXISTS rechazar_solicitud_normal;
 CREATE PROCEDURE rechazar_solicitud_normal(IN p_solicitud_id INT)
@@ -310,7 +309,7 @@ BEGIN
         WHERE usuario_id = v_usuario_id
           AND relacion_id = p_solicitud_id
           AND relacion_tipo = 'solicitud'
-          AND mensaje LIKE 'Tu solicitud con ID % ha sido rechazada%'
+          AND mensaje LIKE 'Tu solicitud ha sido rechazada'
     ) THEN
         INSERT INTO notificacion(
             usuario_id,
@@ -325,7 +324,7 @@ BEGIN
         VALUES (
             v_usuario_id,
             'solicitud',
-            CONCAT('Tu solicitud con ID ', p_solicitud_id, ' ha sido rechazada.'),
+            'Tu solicitud ha sido rechazada.',
             NOW(),
             FALSE,
             FALSE,
@@ -392,7 +391,7 @@ BEGIN
         )
         VALUES (
             p_usuario_id, 'solicitud_especial',
-            CONCAT('Tu solicitud especial con ID ', v_nueva_solicitud_id, ' está pendiente debido a conflicto con otra reserva o solicitud.'),
+            'Tu solicitud especial está pendiente debido a conflicto con otra reserva o solicitud.',
             NOW(), FALSE, FALSE, v_nueva_solicitud_id, 'solicitud_especial'
         );
     ELSE
@@ -432,7 +431,7 @@ BEGIN
         WHERE usuario_id = v_usuario_id
           AND relacion_id = p_solicitud_especial_id
           AND relacion_tipo = 'solicitud_especial'
-          AND mensaje LIKE 'Tu solicitud especial con ID % ha sido aprobada%'
+          AND mensaje LIKE 'Tu solicitud especial ha sido aprobada'
     ) THEN
         INSERT INTO notificacion(
             usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo
@@ -440,7 +439,7 @@ BEGIN
         VALUES (
             v_usuario_id,
             'solicitud_especial',
-            CONCAT('Tu solicitud especial con ID ', p_solicitud_especial_id, ' ha sido aprobada.'),
+            'Tu solicitud especial ha sido aprobada.',
             NOW(), FALSE, FALSE,
             p_solicitud_especial_id,
             'solicitud_especial'
@@ -451,7 +450,7 @@ BEGIN
     INSERT INTO notificacion(usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo)
     SELECT DISTINCT s.usuario_id,
         'solicitud',
-        CONCAT('Tu solicitud con ID ', s.solicitud_id, ' tuvo que ser removida debido a un evento especial aprobado.'),
+        'Tu solicitud tuvo que ser removida debido a un evento especial aprobado.',
         NOW(),
         FALSE,
         FALSE,
@@ -480,7 +479,7 @@ BEGIN
           WHERE n.usuario_id = s.usuario_id
             AND n.relacion_id = s.solicitud_id
             AND n.relacion_tipo = 'solicitud'
-            AND n.mensaje LIKE 'Tu solicitud con ID % tuvo que ser removida%'
+            AND n.mensaje LIKE 'Tu solicitud  tuvo que ser removida'
       );
 
     -- Eliminar reservas en conflicto (normales y especiales)
@@ -523,6 +522,7 @@ BEGIN
 
 END;
 
+
 DROP PROCEDURE IF EXISTS rechazar_solicitud_especial;
 CREATE PROCEDURE rechazar_solicitud_especial(
     IN p_solicitud_especial_id INT
@@ -561,7 +561,7 @@ BEGIN
             WHERE usuario_id = v_usuario_id
               AND relacion_id = p_solicitud_especial_id
               AND relacion_tipo = 'solicitud_especial'
-              AND mensaje LIKE 'Tu solicitud especial con ID % ha sido rechazada%'
+              AND mensaje LIKE 'Tu solicitud especial  ha sido rechazada'
         ) THEN
             INSERT INTO notificacion(
                 usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo
@@ -569,7 +569,7 @@ BEGIN
             VALUES (
                 v_usuario_id,
                 'solicitud_especial',
-                CONCAT('Tu solicitud especial con ID ', p_solicitud_especial_id, ' ha sido rechazada.'),
+                'Tu solicitud especial ha sido rechazada.',
                 NOW(),
                 FALSE,
                 FALSE,
@@ -591,7 +591,7 @@ BEGIN
             WHERE usuario_id = v_usuario_id
               AND relacion_id = p_solicitud_especial_id
               AND relacion_tipo = 'solicitud_especial'
-              AND mensaje LIKE 'Tu solicitud especial con ID % ha sido rechazada%'
+              AND mensaje LIKE 'Tu solicitud especial ha sido rechazada'
         ) THEN
             INSERT INTO notificacion(
                 usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo
@@ -599,7 +599,7 @@ BEGIN
             VALUES (
                 v_usuario_id,
                 'solicitud_especial',
-                CONCAT('Tu solicitud especial con ID ', p_solicitud_especial_id, ' ha sido rechazada.'),
+                'Tu solicitud especial ha sido rechazada.',
                 NOW(),
                 FALSE,
                 FALSE,
@@ -609,4 +609,394 @@ BEGIN
         END IF;
     END IF;
 
+END;
+
+
+DROP PROCEDURE IF EXISTS insertar_reporte_dano;
+CREATE PROCEDURE insertar_reporte_dano(
+    IN p_usuario_id INT,
+    IN p_inventario_id INT,
+    IN p_descripcion TEXT
+)
+BEGIN
+    DECLARE v_admin_id INT;
+    DECLARE v_reporte_id INT;
+    DECLARE v_existente INT;
+
+    -- 0. Verificar si ya existe un reporte pendiente o en proceso para este inventario
+    SELECT COUNT(*) INTO v_existente
+    FROM reporte_dano
+    WHERE inventario_id = p_inventario_id
+      AND estado IN ('pendiente', 'en_proceso');
+
+    IF v_existente > 0 THEN
+        -- Ya hay un reporte pendiente/en proceso, se cancela la operación
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Ya existe un reporte pendiente o en proceso para este inventario';
+    ELSE
+        -- 1. Insertar el reporte
+        INSERT INTO reporte_dano (usuario_id, inventario_id, descripcion)
+        VALUES (p_usuario_id, p_inventario_id, p_descripcion);
+
+        -- Guardar el ID insertado
+        SET v_reporte_id = LAST_INSERT_ID();
+
+        -- 2. Cambiar estado del inventario a 'desactivado'
+        UPDATE inventario
+        SET estado = 'desactivado'
+        WHERE inventario_id = p_inventario_id;
+
+        -- 3. Obtener el primer administrador
+        SELECT usuario_id INTO v_admin_id
+        FROM usuario
+        WHERE rol = 'administrador' AND activo = TRUE
+        ORDER BY usuario_id ASC
+        LIMIT 1;
+
+        -- 4. Crear notificación para el usuario que hizo el reporte
+        INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+        VALUES (
+            p_usuario_id,
+            'reporte',
+            'Tu reporte ha sido enviado y está a la espera de resolución.',
+            FALSE,
+            FALSE,
+            v_reporte_id,
+            'reporte_dano'
+        );
+
+        -- 5. Crear notificación para el administrador
+        IF v_admin_id IS NOT NULL THEN
+            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+            VALUES (
+                v_admin_id,
+                'reporte',
+                'Se ha recibido un nuevo reporte. Se esperan acciones.',
+                FALSE,
+                FALSE,
+                v_reporte_id,
+                'reporte_dano'
+            );
+        END IF;
+    END IF;
+
+END;
+
+
+DROP PROCEDURE IF EXISTS rechazar_reporte_danio;
+CREATE PROCEDURE rechazar_reporte_danio (
+    IN p_reporte_id INT
+)
+BEGIN
+    DECLARE v_inventario_id INT;
+    DECLARE v_usuario_id INT;
+    DECLARE v_admin_id INT;
+
+    -- Obtener inventario and usuario asociado al reporte
+    SELECT inventario_id, usuario_id
+    INTO v_inventario_id, v_usuario_id
+    FROM reporte_dano
+    WHERE reporte_id = p_reporte_id;
+
+    -- Validar que el reporte exista
+    IF v_inventario_id IS NOT NULL THEN
+
+        -- Cambiar estado del reporte a "rechazado"
+        UPDATE reporte_dano
+        SET estado = 'rechazado'
+        WHERE reporte_id = p_reporte_id;
+
+        -- Cambiar inventario a "operativo" nuevamente
+        UPDATE inventario
+        SET estado = 'operativo'
+        WHERE inventario_id = v_inventario_id;
+
+        -- Obtener el primer administrador activo
+        SELECT usuario_id INTO v_admin_id
+        FROM usuario
+        WHERE rol = 'administrador' AND activo = TRUE
+        ORDER BY usuario_id ASC
+        LIMIT 1;
+
+        -- Notificación al usuario que hizo el reporte
+        INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+        VALUES (
+            v_usuario_id,
+            'reporte',
+            'Tu reporte ha sido cancelado/rechazado.',
+            FALSE,
+            FALSE,
+            p_reporte_id,
+            'reporte_dano'
+        );
+
+        -- Notificación al administrador
+        IF v_admin_id IS NOT NULL THEN
+            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+            VALUES (
+                v_admin_id,
+                'reporte',
+                'El reporte ha sido cancelado/rechazado.',
+                FALSE,
+                FALSE,
+                p_reporte_id,
+                'reporte_dano'
+            );
+        END IF;
+
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El reporte de daño no existe o no tiene inventario asociado';
+    END IF;
+END;
+
+
+DROP PROCEDURE IF EXISTS insertar_mantenimiento;
+CREATE PROCEDURE insertar_mantenimiento(
+    IN p_usuario_mantenimiento_id INT,
+    IN p_reporte_id INT,
+    IN p_tipo VARCHAR(20),
+    IN p_fecha_programada DATE,
+    IN p_descripcion TEXT
+)
+BEGIN
+    DECLARE v_usuario_reporte INT;
+    DECLARE v_inventario_id INT;
+    DECLARE v_mantenimiento_id INT;
+    DECLARE v_existente INT;
+    DECLARE v_estado_reporte VARCHAR(20);
+
+    -- Obtener inventario, usuario y estado del reporte
+    SELECT inventario_id, usuario_id, estado 
+    INTO v_inventario_id, v_usuario_reporte, v_estado_reporte
+    FROM reporte_dano
+    WHERE reporte_id = p_reporte_id;
+
+    -- Si el reporte no existe o está rechazado, terminar el procedimiento
+    IF v_inventario_id IS NOT NULL AND v_estado_reporte <> 'rechazado' THEN
+
+        -- Verificar si ya existe mantenimiento pendiente o en proceso para este reporte
+        SELECT COUNT(*) INTO v_existente
+        FROM mantenimiento
+        WHERE reporte_id = p_reporte_id AND estado IN ('pendiente','en_proceso');
+
+        IF v_existente = 0 THEN
+            -- Insertar mantenimiento
+            INSERT INTO mantenimiento (reporte_id, usuario_id, tipo, fecha_programada, descripcion, estado)
+            VALUES (p_reporte_id, p_usuario_mantenimiento_id, p_tipo, p_fecha_programada, p_descripcion, 'pendiente');
+
+            SET v_mantenimiento_id = LAST_INSERT_ID();
+
+            -- Actualizar estado del reporte a 'en_proceso'
+            UPDATE reporte_dano
+            SET estado = 'en_proceso'
+            WHERE reporte_id = p_reporte_id;
+
+            -- Actualizar estado del inventario a 'en_reparacion'
+            UPDATE inventario
+            SET estado = 'en_reparacion'
+            WHERE inventario_id = v_inventario_id;
+
+            -- Notificación para el usuario que reportó
+            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+            VALUES (
+                v_usuario_reporte,
+                'reporte',
+                'Tu reporte ya está siendo atendido mediante un mantenimiento.',
+                FALSE,
+                FALSE,
+                p_reporte_id,
+                'reporte_dano'
+            );
+
+            -- Notificación para el usuario que registró el mantenimiento
+            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+            VALUES (
+                p_usuario_mantenimiento_id,
+                'mantenimiento',
+                'El mantenimiento fue insertado correctamente.',
+                FALSE,
+                FALSE,
+                v_mantenimiento_id,
+                'mantenimiento'
+            );
+        END IF;
+    END IF;
+
+END;
+
+
+
+DROP PROCEDURE IF EXISTS insertar_mantenimiento;
+CREATE PROCEDURE insertar_mantenimiento(
+    IN p_usuario_mantenimiento_id INT,
+    IN p_reporte_id INT,
+    IN p_tipo VARCHAR(20),
+    IN p_fecha_programada DATE,
+    IN p_descripcion TEXT
+)
+BEGIN
+    DECLARE v_usuario_reporte INT;
+    DECLARE v_inventario_id INT;
+    DECLARE v_mantenimiento_id INT;
+    DECLARE v_existente INT;
+    DECLARE v_estado_reporte VARCHAR(20);
+
+    -- Obtener inventario, usuario y estado del reporte
+    SELECT inventario_id, usuario_id, estado 
+    INTO v_inventario_id, v_usuario_reporte, v_estado_reporte
+    FROM reporte_dano
+    WHERE reporte_id = p_reporte_id;
+
+    IF v_inventario_id IS NOT NULL AND v_estado_reporte <> 'rechazado' THEN
+        SELECT COUNT(*) INTO v_existente
+        FROM mantenimiento
+        WHERE reporte_id = p_reporte_id AND estado IN ('pendiente','en_proceso');
+
+        IF v_existente = 0 THEN
+            INSERT INTO mantenimiento (reporte_id, usuario_id, tipo, fecha_programada, descripcion, estado)
+            VALUES (p_reporte_id, p_usuario_mantenimiento_id, p_tipo, p_fecha_programada, p_descripcion, 'pendiente');
+
+            SET v_mantenimiento_id = LAST_INSERT_ID();
+
+            UPDATE reporte_dano
+            SET estado = 'en_proceso'
+            WHERE reporte_id = p_reporte_id;
+
+            UPDATE inventario
+            SET estado = 'en_reparacion'
+            WHERE inventario_id = v_inventario_id;
+
+            -- Notificaciones sin concatenar ID
+            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+            VALUES (
+                v_usuario_reporte,
+                'reporte',
+                'Tu reporte ya está siendo atendido mediante un mantenimiento.',
+                FALSE,
+                FALSE,
+                p_reporte_id,
+                'reporte_dano'
+            );
+
+            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+            VALUES (
+                p_usuario_mantenimiento_id,
+                'mantenimiento',
+                'El mantenimiento fue insertado correctamente.',
+                FALSE,
+                FALSE,
+                v_mantenimiento_id,
+                'mantenimiento'
+            );
+        END IF;
+    END IF;
+
+END;
+
+
+DROP PROCEDURE IF EXISTS completar_mantenimiento;
+CREATE PROCEDURE completar_mantenimiento(
+    IN p_mantenimiento_id INT,
+    IN p_fecha_completado DATE,
+    IN p_costo DECIMAL(10,2)
+)
+BEGIN
+    DECLARE v_reporte_id INT;
+    DECLARE v_inventario_id INT;
+    DECLARE v_usuario_reporte INT;
+    DECLARE v_usuario_mantenimiento INT;
+    DECLARE v_estado_actual VARCHAR(20);
+
+    proc_block: BEGIN
+        SELECT reporte_id, usuario_id, estado 
+        INTO v_reporte_id, v_usuario_mantenimiento, v_estado_actual
+        FROM mantenimiento
+        WHERE mantenimiento_id = p_mantenimiento_id;
+
+        IF v_estado_actual = 'completado' THEN
+            LEAVE proc_block;
+        END IF;
+
+        SELECT inventario_id, usuario_id 
+        INTO v_inventario_id, v_usuario_reporte
+        FROM reporte_dano
+        WHERE reporte_id = v_reporte_id;
+
+        UPDATE mantenimiento
+        SET fecha_completado = p_fecha_completado,
+            costo = p_costo,
+            estado = 'completado'
+        WHERE mantenimiento_id = p_mantenimiento_id;
+
+        UPDATE reporte_dano
+        SET estado = 'reparado'
+        WHERE reporte_id = v_reporte_id;
+
+        UPDATE inventario
+        SET estado = 'operativo'
+        WHERE inventario_id = v_inventario_id;
+
+        -- Notificaciones sin concatenar ID
+        INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+        VALUES (
+            v_usuario_mantenimiento,
+            'mantenimiento',
+            'El mantenimiento ha sido completado.',
+            FALSE,
+            FALSE,
+            p_mantenimiento_id,
+            'mantenimiento'
+        );
+
+        INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
+        VALUES (
+            v_usuario_reporte,
+            'reporte',
+            'Tu reporte ya ha sido reparado y completado.',
+            FALSE,
+            FALSE,
+            v_reporte_id,
+            'reporte_dano'
+        );
+    END proc_block;
+END;
+
+
+DROP PROCEDURE IF EXISTS cancelar_mantenimiento;
+CREATE PROCEDURE cancelar_mantenimiento(
+    IN p_mantenimiento_id INT
+)
+BEGIN
+    DECLARE v_usuario_id INT;
+    DECLARE v_estado_actual VARCHAR(50);
+
+    SELECT usuario_id, estado
+    INTO v_usuario_id, v_estado_actual
+    FROM mantenimiento
+    WHERE mantenimiento_id = p_mantenimiento_id;
+
+    IF v_usuario_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'El mantenimiento no existe';
+    ELSE
+        IF v_estado_actual <> 'cancelado' THEN
+            UPDATE mantenimiento
+            SET estado = 'cancelado'
+            WHERE mantenimiento_id = p_mantenimiento_id;
+
+            -- Notificación sin concatenar ID
+            INSERT INTO notificacion (
+                usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo
+            ) VALUES (
+                v_usuario_id,
+                'mantenimiento',
+                'El mantenimiento ha sido cancelado.',
+                FALSE,
+                FALSE,
+                p_mantenimiento_id,
+                'mantenimiento'
+            );
+        END IF;
+    END IF;
 END;

@@ -53,7 +53,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/reporte", reporte_danoRoutes);
 app.use("/api/mantenimiento", mantenimientoRoutes);
 
-// Inicializar DB + procedimientos
 AppDataSource.initialize()
   .then(async () => {
     console.log("📦 Base de datos conectada");
