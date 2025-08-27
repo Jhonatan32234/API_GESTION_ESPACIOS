@@ -50,7 +50,14 @@ class UsuarioController {
   });
 }
 
+ async logout(req, res) {
+    // Borrar cookies estableciendo valor vacío y expiración pasada
+    res.clearCookie("token", { httpOnly: true, secure: false, sameSite: "strict" });
+    res.clearCookie("id", { httpOnly: false, secure: false, sameSite: "strict" });
+    res.clearCookie("rol", { httpOnly: false, secure: false, sameSite: "strict" });
 
+    res.json({ mensaje: "Logout exitoso" });
+  }
 }
 
 module.exports = new UsuarioController();

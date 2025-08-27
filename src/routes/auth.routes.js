@@ -39,4 +39,17 @@ const usuarioController = require("../controllers/usuario.controller");
  */
 router.post("/login", usuarioController.login);
 
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Cierra sesión y borra las cookies de token, rol e id
+ *     tags: [Autenticación]
+ *     responses:
+ *       200:
+ *         description: Logout exitoso, cookies eliminadas
+ */
+router.post("/logout", usuarioController.logout);
+
+
 module.exports = router;
