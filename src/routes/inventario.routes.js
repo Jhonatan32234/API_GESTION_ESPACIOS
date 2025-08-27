@@ -26,6 +26,27 @@ router.get("/", authMiddleware(["administrador","docente"]), inventarioControlle
 
 /**
  * @swagger
+ * /api/inventario/espacio/{espacio_id}:
+ *   get:
+ *     summary: Obtener inventarios de un espacio con software asociado
+ *     tags: [Inventario]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: espacio_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del espacio
+ *     responses:
+ *       200:
+ *         description: Lista de inventarios con software
+ */
+router.get("/espacio/:espacio_id", authMiddleware(["administrador","docente"]), inventarioController.getByEspacioConSoftware);
+
+/**
+ * @swagger
  * /api/inventario/{id}:
  *   get:
  *     summary: Obtener un elemento de inventario por ID

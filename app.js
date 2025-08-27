@@ -21,6 +21,7 @@ const solicitud_especialRoutes = require("./src/routes/solicitud_especial.routes
 const conflicto_recurrenteRoutes = require("./src/routes/conflicto_recurrente.routes");  
 const reporte_danoRoutes = require("./src/routes/reporte_dano.routes");
 const mantenimientoRoutes = require("./src/routes/mantenimiento.routes");
+const softwareRoutes = require("./src/routes/software.routes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/conflicto_recurrente", conflicto_recurrenteRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reporte", reporte_danoRoutes);
 app.use("/api/mantenimiento", mantenimientoRoutes);
+app.use("/api/software", softwareRoutes);
 
 AppDataSource.initialize()
   .then(async () => {

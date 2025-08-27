@@ -21,8 +21,32 @@ async getById(id) {
 }
 
 
+async getByEspacioConSoftware(espacio_id) {
+    const query = `
+      SELECT 
+        i.inventario_id,
+        i.nombre_elemento,
+        i.tipo,
+        i.estado,
+        i.descripcion,
+        i.marca,
+        i.modelo,
+        i.patrimonio,
+        i.observaciones,
+        s.software_id,
+        s.nombre AS software_nombre,
+        s.version AS software_version,
+        s.asignatura_requerida,
+        s.fecha_instalacion,
+        s.fecha_actualizacion
+      FROM inventario i
+      INNER JOIN software s ON i.inventario_id = s.inventario_id
+      WHERE i.espacio_id = ?
+    `;
+    return await AppDataSource.query(query, [espacio_id]);
+  }
+
   async create(data) {
-  // Verificar patrimonio único
   if (data.patrimonio) {
     const existente = await this.repo.findOneBy({ patrimonio: data.patrimonio });
     if (existente) {
@@ -38,10 +62,9 @@ async getById(id) {
     }
   }
 
-  // Crear inventario asociando el espacio
   const nuevo = this.repo.create({
     ...data,
-    espacio: espacio // asignar la entidad completa
+    espacio: espacio 
   });
 
   return await this.repo.save(nuevo);

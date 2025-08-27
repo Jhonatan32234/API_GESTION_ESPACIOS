@@ -33,6 +33,15 @@ class InventarioController {
     await inventarioService.delete(req.params.id);
     res.status(204).send();
   }
+
+   async getByEspacioConSoftware(req, res) {
+    const espacio_id = parseInt(req.params.espacio_id);
+    if (isNaN(espacio_id)) {
+      return res.status(400).json({ mensaje: "ID de espacio inválido" });
+    }
+    const items = await inventarioService.getByEspacioConSoftware(espacio_id);
+    res.json(items);
+  }
 }
 
 module.exports = new InventarioController();

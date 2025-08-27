@@ -12,7 +12,7 @@ module.exports = new EntitySchema({
       type: "one-to-many",
       target: "Espacio",
       inverseSide: "ubicacion",
-      onDelete: "SET NULL" // si borras una ubicación, los espacios quedan sin ubicación
+      onDelete: "SET NULL"
     }
   }
 });

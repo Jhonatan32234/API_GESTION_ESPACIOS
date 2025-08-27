@@ -22,8 +22,8 @@ module.exports = new EntitySchema({
       target: "Espacio",
       joinColumn: { name: "espacio_id" },
       eager: true,
-      nullable: true,        // Permite NULL
-      onDelete: "SET NULL"   // Al eliminar el Espacio, espacio_id queda NULL
+      nullable: true,
+      onDelete: "SET NULL"
     }
   }
 });
