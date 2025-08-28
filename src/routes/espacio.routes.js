@@ -150,8 +150,8 @@ router.post("/", authMiddleware(["administrador"]), espacioController.create);
  *               categoria:
  *                 type: string
  *                 enum: [generica, equipada, tecnica, laboratorio]
- *               ubicacion:
- *                 type: string
+ *               ubicacionId:
+ *                 type: integer   
  *               capacidad:
  *                 type: integer
  *               descripcion:

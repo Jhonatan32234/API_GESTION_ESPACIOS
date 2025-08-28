@@ -51,6 +51,64 @@ class ReporteDanoController {
       res.status(500).json({ mensaje: "Error al rechazar el reporte", error: error.message });
     }
   }
+
+  async actualizarReporte(req, res) {
+  try {
+    const { reporteId } = req.params;
+    const data = req.body;
+
+    const result = await reportedanoservice.actualizarReporte(reporteId, data);
+
+    if (result.success === false) {
+      return res.status(400).json({ mensaje: result.message });
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: "Error al actualizar el reporte", error: error.message });
+  }
+}
+
+async marcarEnProceso(req, res) {
+  try {
+    const { reporteId } = req.params;
+    const result = await reportedanoservice.marcarEnProceso(reporteId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: "Error al marcar en proceso", error: error.message });
+  }
+}
+
+async actualizarReporte(req, res) {
+  try {
+    const { reporteId } = req.params;
+    const data = req.body;
+
+    const result = await reportedanoservice.actualizarReporte(reporteId, data);
+
+    if (result.success === false) {
+      return res.status(400).json({ mensaje: result.message });
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: "Error al actualizar el reporte", error: error.message });
+  }
+}
+
+async marcarReparado(req, res) {
+  try {
+    const { reporteId } = req.params;
+    const result = await reportedanoservice.marcarReparado(reporteId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: "Error al marcar reparado", error: error.message });
+  }
+}
 }
 
 module.exports = new ReporteDanoController();

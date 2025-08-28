@@ -110,4 +110,92 @@ router.get("/usuario/:id", authMiddleware(["administrador", "docente"]), reporte
  */
 router.post("/rechazar/:reporteId", authMiddleware(["administrador"]), reportedanocontroller.rechazarReporte);
 
+
+/**
+ * @swagger
+ * /api/reporte/{reporteId}:
+ *   put:
+ *     summary: Actualizar un reporte de daño
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reporteId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del reporte a actualizar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               descripcion:
+ *                 type: string
+ *               estado:
+ *                 type: string
+ *                 enum: [pendiente, en_proceso, reparado]
+ *               usuario_id:
+ *                 type: integer
+ *               inventario_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Reporte actualizado correctamente
+ *       400:
+ *         description: No se enviaron campos para actualizar
+ *       500:
+ *         description: Error al actualizar el reporte
+ */
+router.put("/:reporteId", authMiddleware(["administrador", "docente"]), reportedanocontroller.actualizarReporte);
+
+/**
+ * @swagger
+ * /api/reporte/proceso/{reporteId}:
+ *   post:
+ *     summary: Marcar un reporte como en proceso y notificar al usuario
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reporteId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del reporte
+ *     responses:
+ *       200:
+ *         description: Reporte marcado en proceso y usuario notificado
+ *       500:
+ *         description: Error interno
+ */
+router.post("/proceso/:reporteId", authMiddleware(["administrador"]), reportedanocontroller.marcarEnProceso);
+
+/**
+ * @swagger
+ * /api/reporte/reparado/{reporteId}:
+ *   post:
+ *     summary: Marcar un reporte como reparado y notificar al usuario
+ *     tags: [Reporte de Daño]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: reporteId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del reporte
+ *     responses:
+ *       200:
+ *         description: Reporte marcado como reparado y usuario notificado
+ *       500:
+ *         description: Error interno
+ */
+router.post("/reparado/:reporteId", authMiddleware(["administrador"]), reportedanocontroller.marcarReparado);
+
 module.exports = router;
