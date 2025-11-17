@@ -81,6 +81,79 @@ router.post("/", authMiddleware(["administrador"]), softwareController.create);
 
 /**
  * @swagger
+ * /api/software/inventario/{inventario_id}:
+ *   get:
+ *     summary: Obtener software por ID de inventario
+ *     tags: [Software]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: inventario_id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID del inventario
+ *     responses:
+ *       200:
+ *         description: Lista de software asociado al inventario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 inventario_id:
+ *                   type: integer
+ *                   example: 1
+ *                 total_software:
+ *                   type: integer
+ *                   example: 3
+ *                 software:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       software_id:
+ *                         type: integer
+ *                       nombre:
+ *                         type: string
+ *                       version:
+ *                         type: string
+ *                       asignatura_requerida:
+ *                         type: string
+ *                       fecha_instalacion:
+ *                         type: string
+ *                         format: date
+ *                       fecha_actualizacion:
+ *                         type: string
+ *                         format: date
+ *                       inventario_id:
+ *                         type: integer
+ *                       estado:
+ *                         type: string
+ *                       marca:
+ *                         type: string
+ *                       modelo:
+ *                         type: string
+ *                       patrimonio:
+ *                         type: string
+ *                       observaciones:
+ *                         type: string
+ *                       nombre_elemento:
+ *                         type: string
+ *                       tipo:
+ *                         type: string
+ *                       descripcion:
+ *                         type: string
+ *       404:
+ *         description: No se encontró software para este inventario
+ *       400:
+ *         description: Parámetro inventario_id requerido
+ */
+router.get("/inventario/:inventario_id", authMiddleware(["administrador", "docente"]), softwareController.getByInventarioId);
+
+/**
+ * @swagger
  * /api/software/{id}:
  *   put:
  *     summary: Actualizar software

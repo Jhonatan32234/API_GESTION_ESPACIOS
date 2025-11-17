@@ -13,10 +13,7 @@ class SoftwareService {
         s.fecha_instalacion,
         s.fecha_actualizacion,
         i.inventario_id,
-        i.nombre_elemento,
-        i.tipo,
         i.estado,
-        i.descripcion,
         i.marca,
         i.modelo,
         i.patrimonio,
@@ -38,10 +35,7 @@ class SoftwareService {
         s.fecha_instalacion,
         s.fecha_actualizacion,
         i.inventario_id,
-        i.nombre_elemento,
-        i.tipo,
         i.estado,
-        i.descripcion,
         i.marca,
         i.modelo,
         i.patrimonio,
@@ -95,6 +89,34 @@ class SoftwareService {
     return this.getById(id);
   }
 
+
+  async getByInventarioId(inventario_id) {
+    const query = `
+      SELECT 
+        s.software_id,
+        s.nombre,
+        s.version,
+        s.asignatura_requerida,
+        s.fecha_instalacion,
+        s.fecha_actualizacion,
+        i.inventario_id,
+        i.estado,
+        i.marca,
+        i.modelo,
+        i.patrimonio,
+        i.observaciones,
+        c.nombre_elemento,
+        c.tipo,
+        c.descripcion
+      FROM software s
+      INNER JOIN inventario i ON s.inventario_id = i.inventario_id
+      INNER JOIN catalogo_elemento c ON i.catalogo_id = c.catalogo_id
+      WHERE s.inventario_id = ?
+      ORDER BY s.nombre
+    `;
+    return await AppDataSource.query(query, [inventario_id]);
+  }
+  
   // Eliminar software
   async delete(id) {
     const query = `DELETE FROM software WHERE software_id = ?`;

@@ -19,10 +19,26 @@ class UsuarioService {
   }
 
   async create(data) {
-    const hash = await bcrypt.hash(data.contrasena, 10);
-    const nuevo = this.repo.create({ ...data, contrasena: hash });
-    return await this.repo.save(nuevo);
+  // Verificar si el email ya existe
+  const usuarioExistente = await this.repo.findOne({
+    where: { email: data.email }
+  });
+
+  if (usuarioExistente) {
+    throw new Error('El email ya está registrado');
   }
+
+  const hash = await bcrypt.hash(data.contrasena, 10);
+  const nuevo = this.repo.create({ ...data, contrasena: hash });
+  
+  const usuarioGuardado = await this.repo.save(nuevo);
+  
+  // Eliminar la contraseña del objeto de respuesta
+  const usuarioResponse = { ...usuarioGuardado };
+  delete usuarioResponse.contrasena;
+  
+  return usuarioResponse;
+}
 
   async update(id, data) {
     if (data.contrasena) {

@@ -74,12 +74,12 @@ router.get("/:id", authMiddleware(["administrador", "docente"]), usuarioControll
  *                 type: string
  *               rol:
  *                 type: string
- *                 enum: [administrador, docente]
+ *                 enum: [docente, administrador]
  *     responses:
  *       201:
  *         description: Usuario creado
  */
-router.post("/",authMiddleware(["administrador"]), usuarioController.create);
+router.post("/", usuarioController.create);
 
 /**
  * @swagger

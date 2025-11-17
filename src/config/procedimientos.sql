@@ -105,6 +105,7 @@ BEGIN
     DECLARE v_usuario_email VARCHAR(255);
 
     DECLARE v_tuvo_conflicto BOOLEAN DEFAULT FALSE;
+    DECLARE v_conflicto_solicitud_id INT DEFAULT NULL;
 
     DECLARE done INT DEFAULT 0;
 
@@ -169,10 +170,34 @@ BEGIN
 
                         IF (v_cnt_norm > 0 OR v_cnt_esp > 0) THEN
                             SET v_tuvo_conflicto = TRUE;
+                            
+                            -- Guardar el ID de la solicitud en conflicto (solo para solicitudes normales)
+                            IF v_sol_norm IS NOT NULL THEN
+                                SET v_conflicto_solicitud_id = v_sol_norm;
+                            END IF;
 
-                            -- Conflictos (igual que antes)
-                            -- [Se mantiene la lógica de inserts en conflicto_recurrente y notificaciones de choques]
-                            -- ...
+                            -- Insertar en conflicto_recurrente si es conflicto entre solicitudes normales
+                            IF v_sol_norm IS NOT NULL THEN
+                                IF NOT EXISTS (
+                                    SELECT 1 FROM conflicto_recurrente 
+                                    WHERE ((solicitud_id_1 = p_solicitud_id AND solicitud_id_2 = v_sol_norm)
+                                        OR (solicitud_id_1 = v_sol_norm AND solicitud_id_2 = p_solicitud_id))
+                                    AND estado = 'pendiente'
+                                ) THEN
+                                    INSERT INTO conflicto_recurrente(
+                                        dia_semana, hora_inicio, hora_fin, estado, 
+                                        espacio_id, periodo_id, solicitud_id_1, solicitud_id_2,
+                                        observaciones
+                                    )
+                                    VALUES (
+                                        v_dia, v_hi, v_hf, 'pendiente',
+                                        v_espacio, v_periodo, p_solicitud_id, v_sol_norm,
+                                        CONCAT('Conflicto detectado al aprobar solicitud ', p_solicitud_id, 
+                                               ' con solicitud existente ', v_sol_norm)
+                                    );
+                                END IF;
+                            END IF;
+
                         ELSE
                             -- Sin conflicto -> crear reserva
                             INSERT INTO reserva(solicitud_id, espacio_id, fecha, hora_inicio, hora_fin)
@@ -194,41 +219,40 @@ BEGIN
         SET estado = 'aprobada'
         WHERE solicitud_id = p_solicitud_id;
 
-       -- Rechazar solicitudes pendientes que ahora choquen con reservas creadas
-UPDATE solicitud s_pending
-JOIN solicitud_horario sh 
-  ON sh.solicitud_id = s_pending.solicitud_id
-JOIN reserva r
-  ON r.espacio_id = v_espacio
- AND r.fecha BETWEEN v_fecha_inicio AND v_fecha_fin
- AND r.hora_inicio < sh.hora_fin
- AND r.hora_fin    > sh.hora_inicio
-SET s_pending.estado = 'rechazada'
-WHERE s_pending.estado = 'pendiente'
-  AND s_pending.solicitud_id <> p_solicitud_id
-  AND (WEEKDAY(r.fecha) + 1) = sh.dia_semana;
+        -- Rechazar solicitudes pendientes que ahora choquen con reservas creadas
+        UPDATE solicitud s_pending
+        JOIN solicitud_horario sh 
+          ON sh.solicitud_id = s_pending.solicitud_id
+        JOIN reserva r
+          ON r.espacio_id = v_espacio
+         AND r.fecha BETWEEN v_fecha_inicio AND v_fecha_fin
+         AND r.hora_inicio < sh.hora_fin
+         AND r.hora_fin    > sh.hora_inicio
+        SET s_pending.estado = 'rechazada'
+        WHERE s_pending.estado = 'pendiente'
+          AND s_pending.solicitud_id <> p_solicitud_id
+          AND (WEEKDAY(r.fecha) + 1) = sh.dia_semana;
 
-INSERT INTO notificacion(usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo)
-SELECT s.usuario_id, 
-       'solicitud', 
-       'Tu solicitud ha sido rechazada debido a conflicto con otra solicitud aprobada.', 
-       NOW(), 
-       FALSE, 
-       FALSE, 
-       s.solicitud_id, 
-       'solicitud'
-FROM solicitud s
-WHERE s.estado = 'rechazada'
-  AND s.solicitud_id <> p_solicitud_id
-  AND NOT EXISTS (
-        SELECT 1 
-        FROM notificacion n 
-        WHERE n.usuario_id = s.usuario_id
-          AND n.relacion_id = s.solicitud_id
-          AND n.relacion_tipo = 'solicitud'
-          AND n.mensaje LIKE 'Tu solicitud ha sido rechazada'
-  );
-
+        INSERT INTO notificacion(usuario_id, tipo, mensaje, fecha_envio, leida, enviado, relacion_id, relacion_tipo)
+        SELECT s.usuario_id, 
+               'solicitud', 
+               'Tu solicitud ha sido rechazada debido a conflicto con otra solicitud aprobada.', 
+               NOW(), 
+               FALSE, 
+               FALSE, 
+               s.solicitud_id, 
+               'solicitud'
+        FROM solicitud s
+        WHERE s.estado = 'rechazada'
+          AND s.solicitud_id <> p_solicitud_id
+          AND NOT EXISTS (
+                SELECT 1 
+                FROM notificacion n 
+                WHERE n.usuario_id = s.usuario_id
+                  AND n.relacion_id = s.solicitud_id
+                  AND n.relacion_tipo = 'solicitud'
+                  AND n.mensaje LIKE 'Tu solicitud ha sido rechazada'
+          );
 
         -- Nueva lógica de notificación final
         IF v_tuvo_conflicto = FALSE THEN
@@ -278,10 +302,20 @@ CREATE PROCEDURE rechazar_solicitud_normal(IN p_solicitud_id INT)
 BEGIN
     DECLARE v_usuario_id INT;
     DECLARE v_tiene_reservas BOOLEAN DEFAULT FALSE;
+    DECLARE v_tiene_conflicto_aprobadas BOOLEAN DEFAULT FALSE;
+    DECLARE v_espacio_id INT;
+    DECLARE v_periodo_id INT;
+    DECLARE v_conflicto_count INT;
 
-    -- Obtener el usuario asociado a la solicitud
-    SELECT usuario_id
-    INTO v_usuario_id
+    -- Verificar si la solicitud existe
+    IF NOT EXISTS (SELECT 1 FROM solicitud WHERE solicitud_id = p_solicitud_id) THEN
+        SIGNAL SQLSTATE '45001' 
+        SET MESSAGE_TEXT = 'La solicitud no existe.';
+    END IF;
+
+    -- Obtener información de la solicitud
+    SELECT usuario_id, espacio_id, periodo_id
+    INTO v_usuario_id, v_espacio_id, v_periodo_id
     FROM solicitud
     WHERE solicitud_id = p_solicitud_id;
 
@@ -291,6 +325,28 @@ BEGIN
     FROM reserva
     WHERE solicitud_id = p_solicitud_id;
 
+    -- Verificar si existe conflicto con otra solicitud normal APROBADA
+    SELECT COUNT(*)
+    INTO v_conflicto_count
+    FROM conflicto_recurrente cr
+    WHERE cr.estado = 'pendiente'
+      AND (cr.solicitud_id_1 = p_solicitud_id OR cr.solicitud_id_2 = p_solicitud_id)
+      AND EXISTS (
+          SELECT 1 FROM solicitud s 
+          WHERE s.solicitud_id IN (cr.solicitud_id_1, cr.solicitud_id_2)
+          AND s.estado = 'aprobada'
+          AND s.solicitud_id <> p_solicitud_id
+      );
+
+    SET v_tiene_conflicto_aprobadas = (v_conflicto_count > 0);
+
+    -- Si hay conflicto entre solicitudes aprobadas, cancelar el proceso
+    IF v_tiene_conflicto_aprobadas THEN
+        SIGNAL SQLSTATE '45002' 
+        SET MESSAGE_TEXT = 'No se puede rechazar la solicitud. Existe un conflicto pendiente con otra solicitud aprobada que debe ser resuelto primero.';
+    END IF;
+
+    -- Si no hay conflicto, proceder con el rechazo normal
     IF v_tiene_reservas THEN
         -- Eliminar todas las reservas asociadas
         DELETE FROM reserva
@@ -332,6 +388,12 @@ BEGIN
             'solicitud'
         );
     END IF;
+
+    -- También eliminar cualquier conflicto pendiente relacionado con esta solicitud
+    DELETE FROM conflicto_recurrente
+    WHERE estado = 'pendiente'
+      AND (solicitud_id_1 = p_solicitud_id OR solicitud_id_2 = p_solicitud_id);
+
 END;
 
 
@@ -810,75 +872,6 @@ BEGIN
             );
 
             -- Notificación para el usuario que registró el mantenimiento
-            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
-            VALUES (
-                p_usuario_mantenimiento_id,
-                'mantenimiento',
-                'El mantenimiento fue insertado correctamente.',
-                FALSE,
-                FALSE,
-                v_mantenimiento_id,
-                'mantenimiento'
-            );
-        END IF;
-    END IF;
-
-END;
-
-
-
-DROP PROCEDURE IF EXISTS insertar_mantenimiento;
-CREATE PROCEDURE insertar_mantenimiento(
-    IN p_usuario_mantenimiento_id INT,
-    IN p_reporte_id INT,
-    IN p_tipo VARCHAR(20),
-    IN p_fecha_programada DATE,
-    IN p_descripcion TEXT
-)
-BEGIN
-    DECLARE v_usuario_reporte INT;
-    DECLARE v_inventario_id INT;
-    DECLARE v_mantenimiento_id INT;
-    DECLARE v_existente INT;
-    DECLARE v_estado_reporte VARCHAR(20);
-
-    -- Obtener inventario, usuario y estado del reporte
-    SELECT inventario_id, usuario_id, estado 
-    INTO v_inventario_id, v_usuario_reporte, v_estado_reporte
-    FROM reporte_dano
-    WHERE reporte_id = p_reporte_id;
-
-    IF v_inventario_id IS NOT NULL AND v_estado_reporte <> 'rechazado' THEN
-        SELECT COUNT(*) INTO v_existente
-        FROM mantenimiento
-        WHERE reporte_id = p_reporte_id AND estado IN ('pendiente','en_proceso');
-
-        IF v_existente = 0 THEN
-            INSERT INTO mantenimiento (reporte_id, usuario_id, tipo, fecha_programada, descripcion, estado)
-            VALUES (p_reporte_id, p_usuario_mantenimiento_id, p_tipo, p_fecha_programada, p_descripcion, 'pendiente');
-
-            SET v_mantenimiento_id = LAST_INSERT_ID();
-
-            UPDATE reporte_dano
-            SET estado = 'en_proceso'
-            WHERE reporte_id = p_reporte_id;
-
-            UPDATE inventario
-            SET estado = 'en_reparacion'
-            WHERE inventario_id = v_inventario_id;
-
-            -- Notificaciones sin concatenar ID
-            INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
-            VALUES (
-                v_usuario_reporte,
-                'reporte',
-                'Tu reporte ya está siendo atendido mediante un mantenimiento.',
-                FALSE,
-                FALSE,
-                p_reporte_id,
-                'reporte_dano'
-            );
-
             INSERT INTO notificacion (usuario_id, tipo, mensaje, enviado, leida, relacion_id, relacion_tipo)
             VALUES (
                 p_usuario_mantenimiento_id,

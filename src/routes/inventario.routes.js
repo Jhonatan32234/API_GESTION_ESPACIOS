@@ -7,7 +7,45 @@ const authMiddleware = require("../middlewares/auth.middleware");
  * @swagger
  * tags:
  *   name: Inventario
- *   description: Gestión de inventario de espacios
+ *   description: Gestión de elementos de inventario
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Inventario:
+ *       type: object
+ *       required:
+ *         - catalogo_id
+ *       properties:
+ *         inventario_id:
+ *           type: integer
+ *           description: ID autoincremental
+ *         catalogo_id:
+ *           type: integer
+ *           description: ID del elemento en el catálogo
+ *         cantidad:
+ *           type: integer
+ *           default: 1
+ *         marca:
+ *           type: string
+ *         modelo:
+ *           type: string
+ *         patrimonio:
+ *           type: string
+ *         estado:
+ *           type: string
+ *           enum: [disponible, en_uso, mantenimiento, danado, baja]
+ *           default: disponible
+ *         observaciones:
+ *           type: string
+ *         fecha_adquisicion:
+ *           type: string
+ *           format: date
+ *         fecha_creacion:
+ *           type: string
+ *           format: date-time
  */
 
 /**
@@ -20,30 +58,107 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Lista de elementos
+ *         description: Lista de elementos de inventario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Inventario'
  */
 router.get("/", authMiddleware(["administrador","docente"]), inventarioController.getAll);
 
 /**
  * @swagger
- * /api/inventario/espacio/{espacio_id}:
+ * /api/inventario/disponibles:
  *   get:
- *     summary: Obtener inventarios de un espacio con software asociado
+ *     summary: Obtener elementos de inventario disponibles (sin asignar)
+ *     tags: [Inventario]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de inventario disponible
+ */
+router.get("/disponibles", authMiddleware(["administrador","docente"]), inventarioController.getDisponibles);
+
+/**
+ * @swagger
+ * /api/inventario/espacio/{espacioId}:
+ *   get:
+ *     summary: Obtener inventario asignado a un espacio
  *     tags: [Inventario]
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: path
- *         name: espacio_id
+ *         name: espacioId
  *         required: true
  *         schema:
  *           type: integer
  *         description: ID del espacio
  *     responses:
  *       200:
- *         description: Lista de inventarios con software
+ *         description: Lista de inventario del espacio
  */
-router.get("/espacio/:espacio_id", authMiddleware(["administrador","docente"]), inventarioController.getByEspacioConSoftware);
+router.get("/espacio/:espacioId", authMiddleware(["administrador","docente"]), inventarioController.getByEspacio);
+
+/**
+ * @swagger
+ * /api/inventario/catalogo/{catalogoId}:
+ *   get:
+ *     summary: Obtener inventario por elemento del catálogo
+ *     tags: [Inventario]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: catalogoId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del elemento del catálogo
+ *     responses:
+ *       200:
+ *         description: Lista de inventario del catálogo especificado
+ */
+router.get("/catalogo/:catalogoId", authMiddleware(["administrador","docente"]), inventarioController.getByCatalogo);
+
+/**
+ * @swagger
+ * /api/inventario/tipo/{tipo}:
+ *   get:
+ *     summary: Obtener inventario por tipo (equipamiento, mobiliario, infraestructura)
+ *     tags: [Inventario]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: tipo
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [equipamiento, mobiliario, infraestructura]
+ *         description: Tipo de elemento
+ *     responses:
+ *       200:
+ *         description: Lista de inventario del tipo especificado
+ */
+router.get("/tipo/:tipo", authMiddleware(["administrador","docente"]), inventarioController.getByTipo);
+
+/**
+ * @swagger
+ * /api/inventario/con-software:
+ *   get:
+ *     summary: Obtener inventario con información de software asociado
+ *     tags: [Inventario]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de inventario con software
+ */
+router.get("/con-software", authMiddleware(["administrador","docente"]), inventarioController.getConSoftware);
 
 /**
  * @swagger
@@ -83,34 +198,35 @@ router.get("/:id", authMiddleware(["administrador","docente"]), inventarioContro
  *           schema:
  *             type: object
  *             required:
- *               - espacio_id
- *               - nombre_elemento
- *               - tipo
- *               - estado
+ *               - catalogo_id
  *             properties:
- *               espacio_id:
+ *               catalogo_id:
  *                 type: integer
- *               nombre_elemento:
- *                 type: string
- *               tipo:
- *                 type: string
- *                 enum: [infraestructura, equipamiento]
- *               estado:
- *                 type: string
- *                 enum: [operativo, en_reparacion, desactivado]
- *               descripcion:
- *                 type: string
+ *                 example: 1
+ *               cantidad:
+ *                 type: integer
+ *                 default: 1
+ *                 example: 1
  *               marca:
  *                 type: string
+ *                 example: "Null"
  *               modelo:
  *                 type: string
+ *                 example: "Null"
  *               patrimonio:
  *                 type: string
+ *                 example: "Null"
+ *               estado:
+ *                 type: string
+ *                 enum: [disponible, en_uso, desactivado, mantenimiento]
+ *                 default: disponible
+ *                 example: "disponible"
  *               observaciones:
  *                 type: string
+ *                 example: "Nuevo en caja"
  *     responses:
  *       201:
- *         description: Inventario creado
+ *         description: Inventario creado exitosamente
  */
 router.post("/", authMiddleware(["administrador"]), inventarioController.create);
 
@@ -135,31 +251,59 @@ router.post("/", authMiddleware(["administrador"]), inventarioController.create)
  *           schema:
  *             type: object
  *             properties:
- *               espacio_id:
+ *               catalogo_id:
  *                 type: integer
- *               nombre_elemento:
- *                 type: string
- *               tipo:
- *                 type: string
- *                 enum: [infraestructura, equipamiento]
- *               estado:
- *                 type: string
- *                 enum: [operativo, en_reparacion, desactivado]
- *               descripcion:
- *                 type: string
+ *               cantidad:
+ *                 type: integer
  *               marca:
  *                 type: string
  *               modelo:
  *                 type: string
  *               patrimonio:
  *                 type: string
+ *               estado:
+ *                 type: string
+ *                 enum: [disponible, en_uso, desactivado, mantenimiento]
  *               observaciones:
  *                 type: string
  *     responses:
  *       200:
- *         description: Inventario actualizado
+ *         description: Inventario actualizado exitosamente
  */
 router.put("/:id", authMiddleware(["administrador"]), inventarioController.update);
+
+/**
+ * @swagger
+ * /api/inventario/{id}/estado:
+ *   put:
+ *     summary: Cambiar el estado de un elemento de inventario
+ *     tags: [Inventario]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - estado
+ *             properties:
+ *               estado:
+ *                 type: string
+ *                 enum: [disponible, en_uso, mantenimiento, danado, baja]
+ *                 example: "mantenimiento"
+ *     responses:
+ *       200:
+ *         description: Estado del inventario actualizado
+ */
+router.put("/:id/estado", authMiddleware(["administrador"]), inventarioController.cambiarEstado);
 
 /**
  * @swagger
@@ -177,7 +321,9 @@ router.put("/:id", authMiddleware(["administrador"]), inventarioController.updat
  *           type: integer
  *     responses:
  *       204:
- *         description: Inventario eliminado
+ *         description: Inventario eliminado exitosamente
+ *       400:
+ *         description: No se puede eliminar porque tiene asignaciones activas
  */
 router.delete("/:id", authMiddleware(["administrador"]), inventarioController.delete);
 

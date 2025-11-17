@@ -10,7 +10,7 @@ module.exports = new EntitySchema({
     asignatura_requerida: { type: "varchar", length: 100 },
     fecha_instalacion: { type: "date" },
     fecha_actualizacion: { type: "date", nullable: true },
-    inventario_id: { type: "int", nullable: true } // 🔑 id como columna directa
+    inventario_id: { type: "int", nullable: true } 
   },
   relations: {
     inventario: {

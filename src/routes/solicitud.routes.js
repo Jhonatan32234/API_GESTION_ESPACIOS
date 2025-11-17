@@ -130,27 +130,32 @@ router.post("/aprobar/:solicitud_id/:usuario_id", authMiddleware(["administrador
  */
 router.put("/rechazar/:id", authMiddleware(["administrador"]), solicitudController.rechazarNormal);
 
-
 /**
  * @swagger
  * /api/solicitudes/calendario:
  *   get:
- *     summary: Obtener calendario de reservas (estilo tabla) por periodo
+ *     summary: Obtener calendario de reservas (estilo tabla) por espacio y periodo
  *     tags: [Solicitudes]
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: periodo_id
+ *         name: espacio_id
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID del periodo escolar a filtrar
+ *         description: ID del espacio a consultar
+ *       - in: query
+ *         name: periodo_id
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: ID del periodo escolar (opcional, usa el vigente por defecto)
  *     responses:
  *       200:
  *         description: Calendario de reservas con info de materia, grupo y usuario
  *       400:
- *         description: Falta el parámetro periodo_id
+ *         description: Falta el parámetro espacio_id
  */
 
 router.get("/calendario", authMiddleware(["administrador", "docente"]), solicitudController.getCalendario);
@@ -160,34 +165,85 @@ router.get("/calendario", authMiddleware(["administrador", "docente"]), solicitu
  * @swagger
  * /api/solicitudes/semanal:
  *   get:
- *     summary: Obtener solicitudes agrupadas por semanas de un mes
+ *     summary: Obtener solicitudes aprobadas agrupadas por semanas de un mes específico
  *     tags: [Solicitudes]
  *     security:
  *       - cookieAuth: []
  *     parameters:
  *       - in: query
- *         name: periodo_id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID del periodo escolar a filtrar
- *       - in: query
  *         name: mes
  *         required: true
  *         schema:
  *           type: integer
+ *           minimum: 1
+ *           maximum: 12
  *         description: Mes en formato numérico (1-12)
  *       - in: query
- *         name: anio
+ *         name: espacio_id
  *         required: true
  *         schema:
  *           type: integer
- *         description: Año en formato numérico (ej. 2025)
+ *         description: ID del espacio específico a filtrar
  *     responses:
  *       200:
- *         description: Solicitudes organizadas por semanas del mes
+ *         description: Solicitudes aprobadas organizadas por semanas del mes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mes:
+ *                   type: integer
+ *                   description: Mes consultado
+ *                 anio:
+ *                   type: integer
+ *                   description: Año actual automático
+ *                 espacio_id:
+ *                   type: integer
+ *                   description: ID del espacio filtrado (o 'todos' si no se filtró)
+ *                 espacio_nombre:
+ *                   type: string
+ *                   description: Nombre del espacio filtrado
+ *                 semanas:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       semana:
+ *                         type: string
+ *                         description: Número de semana en el mes
+ *                       lunes:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             diaMes:
+ *                               type: integer
+ *                             hora:
+ *                               type: integer
+ *                             detalle:
+ *                               type: string
+ *                             tipo:
+ *                               type: string
+ *                               enum: [normal, especial]
+ *                             espacio_id:
+ *                               type: integer
+ *                             espacio_nombre:
+ *                               type: string
+ *                       martes:
+ *                         type: array
+ *                       miercoles:
+ *                         type: array
+ *                       jueves:
+ *                         type: array
+ *                       viernes:
+ *                         type: array
+ *                       sabado:
+ *                         type: array
+ *                       domingo:
+ *                         type: array
  *       400:
- *         description: Falta algún parámetro requerido
+ *         description: Parámetro mes faltante o inválido
  */
 router.get("/semanal", authMiddleware(["administrador", "docente"]), solicitudController.getSolicitudesPorSemana);
 

@@ -106,7 +106,7 @@ router.get("/:id", authMiddleware(["administrador","docente"]), espacioControlle
  *                 enum: [aula, laboratorio, sala_reuniones]
  *               categoria:
  *                 type: string
- *                 enum: [generica, equipada, tecnica, laboratorio]
+ *                 enum: [generica, semiequipada, equipada]
  *               ubicacionId:
  *                 type: integer
  *               capacidad:
@@ -149,7 +149,7 @@ router.post("/", authMiddleware(["administrador"]), espacioController.create);
  *                 enum: [aula, laboratorio, sala_reuniones]
  *               categoria:
  *                 type: string
- *                 enum: [generica, equipada, tecnica, laboratorio]
+ *                 enum: [generica, semiequipada, equipaday]
  *               ubicacionId:
  *                 type: integer   
  *               capacidad:

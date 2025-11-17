@@ -11,12 +11,29 @@ async aprobarSolicitud(solicitud_id, usuario_id) {
 }
 
 async rechazarSolicitudNormal(solicitud_id) {
-    const result = await AppDataSource.query(
-      `CALL rechazar_solicitud_normal(?)`,
-      [solicitud_id]
-    );
-    return result;
-  }
+    try {
+        const result = await AppDataSource.query(
+            `CALL rechazar_solicitud_normal(?)`,
+            [solicitud_id]
+        );
+        return { success: true, data: result };
+    } catch (error) {
+        console.error('Error en rechazarSolicitudNormal:', error);
+        
+        // Manejar diferentes códigos de error SQL
+        if (error.code === 'ER_SIGNAL_EXCEPTION') {
+            // Error personalizado del procedimiento almacenado
+            if (error.sqlState === '45002') {
+                throw new Error('CONFLICTO_APROBADAS: No se puede rechazar la solicitud. Existe un conflicto pendiente con otra solicitud aprobada que debe ser resuelto primero.');
+            } else if (error.sqlState === '45001') {
+                throw new Error('SOLICITUD_NO_EXISTE: La solicitud no existe.');
+            }
+        }
+        
+        // Error genérico de base de datos
+        throw new Error(`ERROR_BASE_DATOS: Error al rechazar la solicitud: ${error.message}`);
+    }
+}
 
 async getSolicitudesNormalesPorUsuario(usuario_id) {
   const result = await AppDataSource.query(`
@@ -26,7 +43,7 @@ async getSolicitudesNormalesPorUsuario(usuario_id) {
       s.cantidad_asistentes,
       u.nombre AS usuario,
       e.nombre AS espacio,
-      p.nombre AS periodo,
+      p.tipo_periodo AS periodo,
       m.nombre AS materia,
       s.grupo,
       s.motivo,
@@ -71,8 +88,53 @@ async getSolicitudesNormalesPorUsuario(usuario_id) {
 }
 
 
-  async getCalendarioPorPeriodo(periodo_id) {
-    if (!periodo_id) throw new Error("Debe especificar el periodo_id");
+async getCalendarioPorPeriodo(espacio_id, periodo_id = null) {
+  if (!espacio_id) {
+    throw new Error("El parámetro 'espacio_id' es requerido");
+  }
+
+  try {
+    let periodoConsulta = periodo_id;
+
+    if (!periodoConsulta) {
+      const periodoPorFechaQuery = `
+        SELECT periodo_id, fecha_inicio, fecha_fin, tipo_periodo 
+        FROM periodo 
+        WHERE CURDATE() BETWEEN fecha_inicio AND fecha_fin
+        ORDER BY fecha_inicio DESC 
+        LIMIT 1
+      `;
+      
+      const periodosVigentes = await AppDataSource.query(periodoPorFechaQuery);
+      
+      if (periodosVigentes.length === 0) {
+        throw new Error("No hay períodos vigentes. Especifique un periodo_id manualmente.");
+      }
+      
+      periodoConsulta = periodosVigentes[0].periodo_id;
+    }
+
+    const periodoExistente = await AppDataSource.query(
+      `SELECT periodo_id, fecha_inicio, fecha_fin, tipo_periodo, activo FROM periodo WHERE periodo_id = ?`,
+      [periodoConsulta]
+    );
+
+    if (periodoExistente.length === 0) {
+      throw new Error(`El período con ID ${periodoConsulta} no existe`);
+    }
+
+    const periodoInfo = periodoExistente[0];
+
+    const espacioExistente = await AppDataSource.query(
+      `SELECT espacio_id, nombre FROM espacio WHERE espacio_id = ?`,
+      [espacio_id]
+    );
+
+    if (espacioExistente.length === 0) {
+      throw new Error(`El espacio con ID ${espacio_id} no existe`);
+    }
+
+    const espacioInfo = espacioExistente[0];
 
     const calendario = await AppDataSource.query(`
       SELECT 
@@ -81,117 +143,198 @@ async getSolicitudesNormalesPorUsuario(usuario_id) {
             ' - ', 
             LPAD(HOUR(r.hora_fin), 2, '0'), ':', LPAD(MINUTE(r.hora_fin), 2, '0')
         ) AS hora_rango,
-        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 2 THEN CONCAT(
-            'Solicitud ', r.solicitud_id, 
-            ' | ', m.nombre, 
-            ' | Grupo ', s.grupo, 
-            ' | ', u.nombre
-        ) END) AS lunes,
-        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 3 THEN CONCAT(
-            'Solicitud ', r.solicitud_id, 
-            ' | ', m.nombre, 
-            ' | Grupo ', s.grupo, 
-            ' | ', u.nombre
-        ) END) AS martes,
-        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 4 THEN CONCAT(
-            'Solicitud ', r.solicitud_id, 
-            ' | ', m.nombre, 
-            ' | Grupo ', s.grupo, 
-            ' | ', u.nombre
-        ) END) AS miercoles,
-        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 5 THEN CONCAT(
-            'Solicitud ', r.solicitud_id, 
-            ' | ', m.nombre, 
-            ' | Grupo ', s.grupo, 
-            ' | ', u.nombre
-        ) END) AS jueves,
-        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 6 THEN CONCAT(
-            'Solicitud ', r.solicitud_id, 
-            ' | ', m.nombre, 
-            ' | Grupo ', s.grupo, 
-            ' | ', u.nombre
-        ) END) AS viernes,
-        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 7 THEN CONCAT(
-            'Solicitud ', r.solicitud_id, 
-            ' | ', m.nombre, 
-            ' | Grupo ', s.grupo, 
-            ' | ', u.nombre
-        ) END) AS sabado,
-        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 1 THEN CONCAT(
-            'Solicitud ', r.solicitud_id, 
-            ' | ', m.nombre, 
-            ' | Grupo ', s.grupo, 
-            ' | ', u.nombre
-        ) END) AS domingo
+        
+        -- Lunes (día 2)
+        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 2 THEN 
+          CONCAT(
+            COALESCE(m.nombre, se.motivo), 
+            ' | Grupo ', COALESCE(s.grupo, 'Especial'), 
+            ' | ', COALESCE(u_norm.nombre, u_esp.nombre)
+          ) 
+        END) AS lunes,
+        
+        -- Martes (día 3)
+        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 3 THEN 
+          CONCAT(
+            COALESCE(m.nombre, se.motivo), 
+            ' | Grupo ', COALESCE(s.grupo, 'Especial'), 
+            ' | ', COALESCE(u_norm.nombre, u_esp.nombre)
+          ) 
+        END) AS martes,
+        
+        -- Miércoles (día 4)
+        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 4 THEN 
+          CONCAT(
+            COALESCE(m.nombre, se.motivo), 
+            ' | Grupo ', COALESCE(s.grupo, 'Especial'), 
+            ' | ', COALESCE(u_norm.nombre, u_esp.nombre)
+          ) 
+        END) AS miercoles,
+        
+        -- Jueves (día 5)
+        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 5 THEN 
+          CONCAT(
+            COALESCE(m.nombre, se.motivo), 
+            ' | Grupo ', COALESCE(s.grupo, 'Especial'), 
+            ' | ', COALESCE(u_norm.nombre, u_esp.nombre)
+          ) 
+        END) AS jueves,
+        
+        -- Viernes (día 6)
+        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 6 THEN 
+          CONCAT(
+            COALESCE(m.nombre, se.motivo), 
+            ' | Grupo ', COALESCE(s.grupo, 'Especial'), 
+            ' | ', COALESCE(u_norm.nombre, u_esp.nombre)
+          ) 
+        END) AS viernes,
+        
+        -- Sábado (día 7)
+        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 7 THEN 
+          CONCAT(
+            COALESCE(m.nombre, se.motivo), 
+            ' | Grupo ', COALESCE(s.grupo, 'Especial'), 
+            ' | ', COALESCE(u_norm.nombre, u_esp.nombre)
+          ) 
+        END) AS sabado,
+        
+        -- Domingo (día 1)
+        MAX(CASE WHEN DAYOFWEEK(r.fecha) = 1 THEN 
+          CONCAT(
+            COALESCE(m.nombre, se.motivo), 
+            ' | Grupo ', COALESCE(s.grupo, 'Especial'), 
+            ' | ', COALESCE(u_norm.nombre, u_esp.nombre)
+          ) 
+        END) AS domingo,
+
+        -- Información adicional para debugging
+        COUNT(*) AS total_reservas
+
       FROM reserva r
-      JOIN solicitud s ON s.solicitud_id = r.solicitud_id
-      JOIN usuario u ON u.usuario_id = s.usuario_id
-      JOIN materia m ON m.materia_id = s.materia_id
-      WHERE s.periodo_id = ?
+      INNER JOIN espacio e ON e.espacio_id = r.espacio_id
+      
+      -- LEFT JOINs para solicitudes normales
+      LEFT JOIN solicitud s ON s.solicitud_id = r.solicitud_id
+      LEFT JOIN usuario u_norm ON u_norm.usuario_id = s.usuario_id
+      LEFT JOIN materia m ON m.materia_id = s.materia_id
+      
+      -- LEFT JOINs para solicitudes especiales
+      LEFT JOIN solicitud_especial se ON se.solicitud_especial_id = r.solicitud_especial_id
+      LEFT JOIN usuario u_esp ON u_esp.usuario_id = se.usuario_id
+      
+      WHERE r.espacio_id = ? 
+        AND (
+          -- Incluir solicitudes normales del período
+          (s.periodo_id = ? AND s.estado = 'aprobada') 
+          OR 
+          -- Incluir solicitudes especiales aprobadas dentro del rango del período
+          (se.estado = 'aprobada' AND r.fecha BETWEEN ? AND ?)
+        )
       GROUP BY hora_rango
       ORDER BY hora_rango;
-    `, [periodo_id]);
+    `, [espacio_id, periodoConsulta, periodoInfo.fecha_inicio, periodoInfo.fecha_fin]);
 
-    return calendario;
+    return {
+      espacio: {
+        id: espacioInfo.espacio_id,
+        nombre: espacioInfo.nombre
+      },
+      periodo: {
+        id: periodoInfo.periodo_id,
+        tipo: periodoInfo.tipo_periodo,
+        fecha_inicio: periodoInfo.fecha_inicio,
+        fecha_fin: periodoInfo.fecha_fin,
+        activo: periodoInfo.activo === 1,
+        detectado_automaticamente: !periodo_id
+      },
+      calendario: calendario,
+      metadatos: {
+        total_franjas_horarias: calendario.length,
+        fecha_consulta: new Date()
+      }
+    };
+
+  } catch (error) {
+    throw new Error('Error al obtener el calendario por período:'+ error.message);
   }
+}
 
-async getSolicitudesPorSemana(periodo_id, mes, anio) {
-  if (!periodo_id || !mes || !anio) throw new Error("Faltan parámetros");
+
+  async getSolicitudesPorSemana(mes, espacio_id = null) {
+  if (!mes) throw new Error("El parámetro 'mes' es requerido");
 
   try {
-    const semanal = await AppDataSource.query(`
+    const anioActual = new Date().getFullYear();
+
+    let query = `
+      -- CONSULTA CORREGIDA - VERIFICACIÓN EXPLÍCITA DE ESPACIO
       SELECT 
         r.reserva_id,
         r.solicitud_id,
-        NULL AS solicitud_especial_id,
-        r.fecha,
-        HOUR(r.hora_inicio) AS hora,
-        DAYOFWEEK(r.fecha) AS dia_semana,
-        DAY(r.fecha) AS dia_mes,
-        WEEK(r.fecha, 1) - WEEK(DATE_FORMAT(r.fecha, '%Y-%m-01'), 1) + 1 AS semana_del_mes,
-        u.nombre AS usuario,
-        m.nombre AS materia,
-        s.grupo,
-        e.nombre AS espacio,
-        'normal' AS tipo_solicitud
-      FROM reserva r
-      JOIN solicitud s ON s.solicitud_id = r.solicitud_id
-      JOIN usuario u ON u.usuario_id = s.usuario_id
-      JOIN materia m ON m.materia_id = s.materia_id
-      JOIN espacio e ON e.espacio_id = r.espacio_id
-      WHERE s.periodo_id = ?
-        AND MONTH(r.fecha) = ?
-        AND YEAR(r.fecha) = ?
-
-      UNION ALL
-
-      SELECT
-        r.reserva_id,
-        NULL AS solicitud_id,
         r.solicitud_especial_id,
         r.fecha,
         HOUR(r.hora_inicio) AS hora,
         DAYOFWEEK(r.fecha) AS dia_semana,
         DAY(r.fecha) AS dia_mes,
         WEEK(r.fecha, 1) - WEEK(DATE_FORMAT(r.fecha, '%Y-%m-01'), 1) + 1 AS semana_del_mes,
-        u.nombre AS usuario,
-        NULL AS materia,
-        NULL AS grupo,
-        e.nombre AS espacio,
-        'especial' AS tipo_solicitud
+        e.espacio_id,
+        e.nombre AS espacio_nombre,
+        DATE_FORMAT(r.hora_inicio, '%H:%i') AS hora_inicio,
+        DATE_FORMAT(r.hora_fin, '%H:%i') AS hora_fin,
+        
+        -- Campos para solicitudes NORMALES
+        u_norm.nombre AS usuario_normal,
+        m.nombre AS materia,
+        s.grupo,
+        s.motivo AS motivo_normal,
+        
+        -- Campos para solicitudes ESPECIALES  
+        u_esp.nombre AS usuario_especial,
+        se.motivo AS motivo_especial,
+        
+        -- Determinación del tipo
+        CASE 
+          WHEN r.solicitud_id IS NOT NULL AND r.solicitud_id != '' THEN 'normal'
+          WHEN r.solicitud_especial_id IS NOT NULL AND r.solicitud_especial_id != '' THEN 'especial'
+          ELSE 'desconocido'
+        END AS tipo_solicitud
+        
       FROM reserva r
-      JOIN solicitud_especial se ON se.solicitud_especial_id = r.solicitud_especial_id
-      JOIN usuario u ON u.usuario_id = se.usuario_id
-      JOIN espacio e ON e.espacio_id = r.espacio_id
-      WHERE MONTH(r.fecha) = ?
-        AND YEAR(r.fecha) = ?
+      INNER JOIN espacio e ON e.espacio_id = r.espacio_id
+      
+      -- LEFT JOINs para solicitudes normales
+      LEFT JOIN solicitud s ON s.solicitud_id = r.solicitud_id
+      LEFT JOIN usuario u_norm ON u_norm.usuario_id = s.usuario_id
+      LEFT JOIN materia m ON m.materia_id = s.materia_id
+      
+      -- LEFT JOINs para solicitudes especiales
+      LEFT JOIN solicitud_especial se ON se.solicitud_especial_id = r.solicitud_especial_id
+      LEFT JOIN usuario u_esp ON u_esp.usuario_id = se.usuario_id
+      
+      WHERE MONTH(r.fecha) = ? AND YEAR(r.fecha) = ?
+        AND (s.estado = 'aprobada' OR se.estado = 'aprobada')
+    `;
 
-      ORDER BY semana_del_mes, dia_semana, hora;
-    `, [periodo_id, mes, anio, mes, anio]);
+    const params = [mes, anioActual];
+
+    if (espacio_id) {
+      query += ` AND r.espacio_id = ?`;
+      params.push(espacio_id);
+    }
+
+    query += ` ORDER BY semana_del_mes, dia_semana, hora;`;
+
+    const resultados = await AppDataSource.query(query, params);
 
 
     const tablaSemanal = {};
-    semanal.forEach(row => {
+    let espacioNombre = 'Todos los espacios';
+
+    resultados.forEach(row => {
+      if (resultados.length > 0 && !espacioNombre.includes(row.espacio_nombre)) {
+        espacioNombre = espacio_id ? row.espacio_nombre : 'Todos los espacios';
+      }
+
       if (!tablaSemanal[row.semana_del_mes]) {
         tablaSemanal[row.semana_del_mes] = {
           semana: row.semana_del_mes.toString(),
@@ -207,7 +350,7 @@ async getSolicitudesPorSemana(periodo_id, mes, anio) {
 
       const mapping = {
         2: "lunes",
-        3: "martes",
+        3: "martes", 
         4: "miercoles",
         5: "jueves",
         6: "viernes",
@@ -218,15 +361,46 @@ async getSolicitudesPorSemana(periodo_id, mes, anio) {
       const dia = mapping[row.dia_semana];
       if (dia) {
         let detalle = '';
-        if (row.tipo_solicitud === 'normal') {
-          detalle = `${row.materia} | Grupo ${row.grupo} | ${row.usuario} | Aula ${row.espacio} | ${String(row.hora).padStart(2, '0')}:00`;
+        let tipoDisplay = '';
+        let icono = '';
+        let usuario = '';
+        let materiaMotivo = '';
+
+        if (row.tipo_solicitud === 'normal' && row.solicitud_id) {
+          usuario = row.usuario_normal;
+          materiaMotivo = row.materia;
+          detalle = `${row.materia} | Grupo ${row.grupo} | ${row.usuario_normal} | ${row.espacio_nombre} | ${row.hora_inicio}-${row.hora_fin}`;
+          tipoDisplay = 'Clase';
+        } else if (row.tipo_solicitud === 'especial' && row.solicitud_especial_id) {
+          usuario = row.usuario_especial;
+          materiaMotivo = row.motivo_especial;
+          detalle = `${row.motivo_especial} | ${row.usuario_especial} | ${row.espacio_nombre} | ${row.hora_inicio}-${row.hora_fin}`;
+          tipoDisplay = 'Evento';
         } else {
-          detalle = `Evento especial | ${row.solicitud_especial_id} | ${row.usuario} | Aula ${row.espacio} | ${String(row.hora).padStart(2, '0')}:00`;
+          usuario = row.usuario_normal || row.usuario_especial || 'Desconocido';
+          materiaMotivo = row.motivo_normal || row.motivo_especial || 'Sin información';
+          detalle = `${materiaMotivo} | ${usuario} | ${row.espacio_nombre} | ${row.hora_inicio}-${row.hora_fin}`;
+          tipoDisplay = 'Indeterminado';
         }
+
         tablaSemanal[row.semana_del_mes][dia].push({
           diaMes: row.dia_mes,
           hora: row.hora,
-          detalle
+          detalle,
+          reserva_id: row.reserva_id,
+          tipo: row.tipo_solicitud,
+          tipo_display: tipoDisplay,
+          icono: icono,
+          hora_inicio: row.hora_inicio,
+          hora_fin: row.hora_fin,
+          espacio_id: row.espacio_id,
+          espacio_nombre: row.espacio_nombre,
+          usuario: usuario,
+          materia: row.materia,
+          grupo: row.grupo,
+          motivo: row.motivo_especial || row.motivo_normal,
+          solicitud_id: row.solicitud_id,
+          solicitud_especial_id: row.solicitud_especial_id
         });
       }
     });
@@ -249,69 +423,138 @@ async getSolicitudesPorSemana(periodo_id, mes, anio) {
       );
     }
 
-    return semanasOrdenadas;
+    return {
+      mes: mes,
+      anio: anioActual,
+      espacio_id: espacio_id || 'todos',
+      espacio_nombre: espacioNombre,
+      total_reservas: resultados.length,
+      semanas: semanasOrdenadas
+    };
   } catch (error) {
-    console.error('Error en getSolicitudesPorSemana:', error);
     throw new Error('Error al obtener las solicitudes semanales: ' + error.message);
   }
 }
 
-
-  async getSolicitudes() {
-    const result = await AppDataSource.query(`
-      SELECT 
-  s.solicitud_id,
-  u.nombre AS usuario,
-  e.nombre AS espacio,
-  ub.ubicacion AS ubicacion,
-  p.nombre AS periodo,
-  m.nombre AS materia,
-  pe.nombre_carrera AS plan_estudio,
-  s.grupo,
-  s.motivo,
-  s.estado
-FROM solicitud s
-LEFT JOIN usuario u ON u.usuario_id = s.usuario_id
-LEFT JOIN espacio e ON e.espacio_id = s.espacio_id
-LEFT JOIN ubicacion ub ON ub.ubicacion_id = e.ubicacion_id
-LEFT JOIN periodo p ON p.periodo_id = s.periodo_id
-LEFT JOIN materia m ON m.materia_id = s.materia_id
-LEFT JOIN plan_estudio pe ON pe.plan_id = m.plan_id
-WHERE s.estado = 'aprobada'
-ORDER BY s.fecha_creacion DESC;
-
-    `);
-
-    return result;
-  }
+async getSolicitudes() {
+  const result = await AppDataSource.query(`
+    SELECT 
+      s.solicitud_id,
+      u.nombre AS usuario,
+      e.nombre AS espacio,
+      ub.ubicacion AS ubicacion,
+      p.tipo_periodo AS periodo,
+      m.nombre AS materia,
+      pe.nombre_carrera AS plan_estudio,
+      s.grupo,
+      s.motivo,
+      CASE 
+        WHEN EXISTS (
+          SELECT 1 
+          FROM solicitud s2 
+          JOIN solicitud_horario sh2 ON sh2.solicitud_id = s2.solicitud_id
+          JOIN solicitud_horario sh1 ON sh1.solicitud_id = s.solicitud_id
+          WHERE s2.solicitud_id != s.solicitud_id
+            AND s2.espacio_id = s.espacio_id
+            AND s2.periodo_id = s.periodo_id
+            AND s2.estado IN ('pendiente', 'aprobada')
+            AND sh1.dia_semana = sh2.dia_semana
+            AND (
+              (sh1.hora_inicio < sh2.hora_fin AND sh1.hora_fin > sh2.hora_inicio) OR
+              (sh2.hora_inicio < sh1.hora_fin AND sh2.hora_fin > sh1.hora_inicio)
+            )
+        ) THEN 'aprobada-en-conflicto'
+        ELSE s.estado
+      END AS estado,
+      s.fecha_creacion
+    FROM solicitud s
+    LEFT JOIN usuario u ON u.usuario_id = s.usuario_id
+    LEFT JOIN espacio e ON e.espacio_id = s.espacio_id
+    LEFT JOIN ubicacion ub ON ub.ubicacion_id = e.ubicacion_id
+    LEFT JOIN periodo p ON p.periodo_id = s.periodo_id
+    LEFT JOIN materia m ON m.materia_id = s.materia_id
+    LEFT JOIN plan_estudio pe ON pe.plan_id = m.plan_id
+    WHERE s.estado = 'aprobada'
+    ORDER BY 
+      CASE 
+        WHEN estado = 'aprobada-en-conflicto' THEN 1
+        ELSE 2
+      END,
+      s.fecha_creacion DESC;
+  `);
+  return result;
+}
 
   async getSolicitudesPendRech() {
-    const result = await AppDataSource.query(`
-      SELECT 
-  s.solicitud_id,
-  u.nombre AS usuario,
-  e.nombre AS espacio,
-  ub.ubicacion AS ubicacion,
-  p.nombre AS periodo,
-  m.nombre AS materia,
-  pe.nombre_carrera AS plan_estudio,
-  s.grupo,
-  s.motivo,
-  s.estado
-FROM solicitud s
-LEFT JOIN usuario u ON u.usuario_id = s.usuario_id
-LEFT JOIN espacio e ON e.espacio_id = s.espacio_id
-LEFT JOIN ubicacion ub ON ub.ubicacion_id = e.ubicacion_id
-LEFT JOIN periodo p ON p.periodo_id = s.periodo_id
-LEFT JOIN materia m ON m.materia_id = s.materia_id
-LEFT JOIN plan_estudio pe ON pe.plan_id = m.plan_id
-WHERE s.estado IN ('pendiente', 'rechazada')
-ORDER BY s.fecha_creacion DESC;
-
-    `);
-
-    return result;
-  }
+  const result = await AppDataSource.query(`
+    SELECT 
+      s.solicitud_id,
+      u.nombre AS usuario,
+      e.nombre AS espacio,
+      ub.ubicacion AS ubicacion,
+      p.tipo_periodo AS periodo,
+      m.nombre AS materia,
+      s.grupo,
+      s.motivo,
+      CASE 
+        WHEN EXISTS (
+          SELECT 1 
+          FROM solicitud s2 
+          JOIN solicitud_horario sh2 ON sh2.solicitud_id = s2.solicitud_id
+          JOIN solicitud_horario sh1 ON sh1.solicitud_id = s.solicitud_id
+          WHERE s2.solicitud_id != s.solicitud_id
+            AND s2.espacio_id = s.espacio_id
+            AND s2.periodo_id = s.periodo_id
+            AND s2.estado IN ('pendiente', 'aprobada')
+            AND sh1.dia_semana = sh2.dia_semana
+            AND (
+              (sh1.hora_inicio < sh2.hora_fin AND sh1.hora_fin > sh2.hora_inicio) OR
+              (sh2.hora_inicio < sh1.hora_fin AND sh2.hora_fin > sh1.hora_inicio)
+            )
+        ) AND s.estado = 'pendiente' THEN 'pendiente-en-conflicto'
+        ELSE s.estado
+      END AS estado,
+      s.fecha_creacion,
+      -- Información de horarios de la solicitud actual
+      (
+        SELECT GROUP_CONCAT(
+          CONCAT(
+            CASE sh.dia_semana
+              WHEN 1 THEN 'Lun'
+              WHEN 2 THEN 'Mar'
+              WHEN 3 THEN 'Mié'
+              WHEN 4 THEN 'Jue'
+              WHEN 5 THEN 'Vie'
+              WHEN 6 THEN 'Sáb'
+              WHEN 7 THEN 'Dom'
+            END,
+            ' ',
+            TIME_FORMAT(sh.hora_inicio, '%H:%i'),
+            '-',
+            TIME_FORMAT(sh.hora_fin, '%H:%i')
+          ) SEPARATOR ', '
+        )
+        FROM solicitud_horario sh
+        WHERE sh.solicitud_id = s.solicitud_id
+      ) AS horarios
+    FROM solicitud s
+    LEFT JOIN usuario u ON u.usuario_id = s.usuario_id
+    LEFT JOIN espacio e ON e.espacio_id = s.espacio_id
+    LEFT JOIN ubicacion ub ON ub.ubicacion_id = e.ubicacion_id
+    LEFT JOIN periodo p ON p.periodo_id = s.periodo_id
+    LEFT JOIN materia m ON m.materia_id = s.materia_id
+    LEFT JOIN plan_estudio pe ON pe.plan_id = m.plan_id
+    WHERE s.estado IN ('pendiente', 'rechazada')
+    ORDER BY 
+      CASE 
+        WHEN estado = 'pendiente-en-conflicto' THEN 1
+        WHEN estado = 'pendiente' THEN 2
+        ELSE 3
+      END,
+      s.fecha_creacion DESC;
+  `);
+  return result;
+}
 }
 
 module.exports = new SolicitudService();

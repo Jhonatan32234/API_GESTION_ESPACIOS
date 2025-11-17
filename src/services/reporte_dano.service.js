@@ -77,7 +77,7 @@ class ReporteDanoService {
 
   async getPendientesEnProceso() {
   return await AppDataSource.query(`
-    SELECT r.reporte_id, r.descripcion, r.fecha_reporte, r.estado,
+    SELECT r.reporte_id, r.descripcion, r.fecha_reporte, r.estado, r.inventario_id,
            u.usuario_id, u.nombre, u.apellido, u.apellido2
     FROM reporte_dano r
     JOIN usuario u ON r.usuario_id = u.usuario_id
@@ -87,7 +87,7 @@ class ReporteDanoService {
 
 async getReparados() {
   return await AppDataSource.query(`
-    SELECT r.reporte_id, r.descripcion, r.fecha_reporte, r.estado,
+    SELECT r.reporte_id, r.descripcion, r.fecha_reporte, r.estado, r.inventario_id,
            u.usuario_id, u.nombre, u.apellido, u.apellido2
     FROM reporte_dano r
     JOIN usuario u ON r.usuario_id = u.usuario_id

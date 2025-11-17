@@ -42,38 +42,79 @@ async rechazarNormal(req, res) {
     const { id } = req.params;
 
     try {
-      await solicitudService.rechazarSolicitudNormal(id);
-      res.json({ mensaje: `Solicitud con ID ${id} rechazada exitosamente.` });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ mensaje: "Error al rechazar la solicitud." });
+        const result = await solicitudService.rechazarSolicitudNormal(id);
+        res.json({ 
+            success: true,
+            mensaje: `Solicitud con ID ${id} rechazada exitosamente.`,
+            data: result 
+        });
+    } catch (error) {        
+        if (error.message.includes('CONFLICTO_APROBADAS')) {
+            return res.status(409).json({ 
+                success: false,
+                mensaje: error.message.split(': ')[1] // Remover el prefijo
+            });
+        } else if (error.message.includes('SOLICITUD_NO_EXISTE')) {
+            return res.status(404).json({ 
+                success: false,
+                mensaje: error.message.split(': ')[1] // Remover el prefijo
+            });
+        } else if (error.message.includes('ERROR_BASE_DATOS')) {
+            return res.status(500).json({ 
+                success: false,
+                mensaje: 'Error interno del servidor al procesar la solicitud.'
+            });
+        } else {
+            return res.status(500).json({ 
+                success: false,
+                mensaje: "Error al rechazar la solicitud." 
+            });
+        }
     }
-  }
+}
 
 
-  async getCalendario(req, res) {
-    try {
-      const { periodo_id } = req.query;
-      const calendario = await solicitudService.getCalendarioPorPeriodo(periodo_id);
-      res.json(calendario);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ mensaje: error.message || "Error obteniendo el calendario" });
-    }
-  }
-
-  async getSolicitudesPorSemana(req, res) {
+async getCalendario(req, res) {
   try {
-    const { periodo_id, mes, anio } = req.query;
-    if (!periodo_id || !mes || !anio) {
-      return res.status(400).json({ error: "Debe especificar periodo_id, mes y anio" });
+    const { periodo_id, espacio_id } = req.query;
+    
+    if (!espacio_id) {
+      return res.status(400).json({ mensaje: "El parámetro 'espacio_id' es requerido" });
+    }
+    
+    const calendario = await solicitudService.getCalendarioPorPeriodo(espacio_id, periodo_id);
+    res.json(calendario);
+  } catch (error) {
+    res.status(500).json({ mensaje: error.message || "Error obteniendo el calendario" });
+  }
+}
+
+async getSolicitudesPorSemana(req, res) {
+  try {
+    const { mes, espacio_id } = req.query;
+    
+    if (!mes) {
+      return res.status(400).json({ 
+        error: "El parámetro 'mes' es requerido (1-12)" 
+      });
     }
 
-    const semanal = await solicitudService.getSolicitudesPorSemana(periodo_id, mes, anio);
+    const mesNumero = parseInt(mes);
+    if (mesNumero < 1 || mesNumero > 12) {
+      return res.status(400).json({ 
+        error: "El mes debe ser un número entre 1 y 12" 
+      });
+    }
+
+    const espacioIdNumero = espacio_id ? parseInt(espacio_id) : null;
+
+    const semanal = await solicitudService.getSolicitudesPorSemana(mesNumero, espacioIdNumero);
     res.json(semanal);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes semanales" });
+    res.status(500).json({ 
+      mensaje: error.message || "Error obteniendo solicitudes semanales" 
+    });
   }
 }
 

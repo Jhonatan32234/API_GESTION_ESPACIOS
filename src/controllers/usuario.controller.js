@@ -13,9 +13,30 @@ class UsuarioController {
   }
 
   async create(req, res) {
+  try {
     const usuario = await usuarioService.create(req.body);
-    res.status(201).json(usuario);
+    res.status(201).json({
+      success: true,
+      data: usuario,
+      message: 'Usuario creado exitosamente'
+    });
+  } catch (error) {
+    if (error.message === 'El email ya está registrado') {
+      return res.status(400).json({
+        success: false,
+        error: 'El email ya está en uso',
+        message: 'Por favor utiliza otro email'
+      });
+    }
+    
+    // Otros errores
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Error al crear el usuario'
+    });
   }
+}
 
   async update(req, res) {
     const usuario = await usuarioService.update(req.params.id, req.body);

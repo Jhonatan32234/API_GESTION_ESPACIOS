@@ -7,7 +7,6 @@ class ReporteDanoController {
     try {
       const result = await reportedanoservice.insertarReporte(usuario_id, inventario_id, descripcion);
 
-      // Si el servicio devuelve un objeto con success: false, significa que hubo un SIGNAL
       if (result.success === false) {
         return res.status(400).json({ mensaje: result.message });
       }

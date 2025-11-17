@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* Tus estilos CSS permanecen igual */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #ffffff;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+
+        .logo {
+            max-width: 180px;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        /* ... el resto de tus estilos CSS permanecen igual */
+    </style>
+</head>
+<body>
+    <!-- Header con Logo -->
+    <div class="header">
+        <div class="logo-section">
+            {{#if logoBase64}}
+            <img src="{{logoBase64}}" alt="Logo de la Institución" class="logo">
+            {{else}}
+            <div style="background: #f0f0f0; padding: 20px; border-radius: 8px; text-align: center;">
+                <div style="color: #666; font-size: 14px;">LOGO NO DISPONIBLE</div>
+            </div>
+            {{/if}}
+        </div>
+        <div class="institution-info">
+            <div class="institution-name">Sistema de Gestión de Espacios</div>
+            <div style="color: #666; font-size: 14px; margin-top: 5px;">Universidad Tecnológica</div>
+            <div style="color: #888; font-size: 12px; margin-top: 3px;">Reporte Oficial</div>
+        </div>
+    </div>
+
+    <!-- Título del Documento -->
+    <div class="document-title">
+        <h1>REPORTE DE USUARIO</h1>
+        <div style="color: #666; font-size: 14px; margin-top: 8px;">
+            ID: {{usuario_id}} | Generado: {{formatDate fechaReporte}}
+        </div>
+    </div>
+
+    <!-- Información Personal con Foto -->
+    <div class="section">
+        <div class="section-title">📋 Información Personal</div>
+        <div class="personal-info">
+            <div class="photo-section">
+                <!-- Foto de usuario en Base64 -->
+                {{#if fotoBase64}}
+                <img src="{{fotoBase64}}" alt="Foto de {{nombre}}" class="user-photo">
+                {{else}}
+                <div class="photo-placeholder">
+                    SIN FOTO
+                </div>
+                {{/if}}
+                <div class="role-badge">{{upperCase rol}}</div>
+                <div style="font-size: 12px; color: #666; margin-top: 8px;">Miembro desde {{formatDate fecha_creacion}}</div>
+            </div>
+            <div class="info-details">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">ID Usuario:</span>
+                        <span class="value" style="font-family: monospace; background: #f8f9fa; padding: 2px 6px; border-radius: 4px;">#{{usuario_id}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Nombre Completo:</span>
+                        <span class="value" style="font-size: 16px; font-weight: 500;">{{nombre}} {{apellido}} {{apellido2}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Correo Electrónico:</span>
+                        <span class="value">{{email}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tipo de Usuario:</span>
+                        <span class="value">{{upperCase rol}}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Estado de Cuenta:</span>
+                        <span class="value">
+                            {{#if activo}}
+                                <span class="status status-active">✅ ACTIVO</span>
+                            {{else}}
+                                <span class="status status-inactive">❌ INACTIVO</span>
+                            {{/if}}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Fecha de Registro:</span>
+                        <span class="value">{{formatDate fecha_creacion}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Identificación -->
+    <div class="qr-section">
+        <h3 style="color: #2c5aa0; margin-bottom: 20px;">🆔 Identificación de Usuario</h3>
+        {{#if fotoBase64}}
+        <img src="{{fotoBase64}}" alt="Identificación" class="qr-image">
+        {{else}}
+        <div style="background: #f0f0f0; width: 140px; height: 140px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+            <div style="color: #666; font-size: 12px; text-align: center;">IMAGEN NO DISPONIBLE</div>
+        </div>
+        {{/if}}
+        <div style="margin-top: 15px;">
+            <div style="font-family: monospace; font-size: 14px; color: #2c5aa0; font-weight: bold;">
+                USR-{{usuario_id}}-{{timestamp}}
+            </div>
+            <div style="font-size: 12px; color: #666; margin-top: 8px;">
+                Este código identifica al usuario en el sistema
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p style="margin-bottom: 10px;">📄 Este documento fue generado automáticamente por el Sistema de Gestión de Espacios</p>
+        <p style="color: #888; font-size: 11px; margin-bottom: 20px;">
+            Fecha de generación: {{formatDate fechaReporte}} | Documento confidencial
+        </p>
+        
+        <div class="signature-section">
+            <div class="signature-line">
+                <p>Firma del Usuario</p>
+                <div style="font-size: 10px; color: #999; margin-top: 5px;">
+                    {{nombre}} {{apellido}}
+                </div>
+            </div>
+            <div class="signature-line">
+                <p>Firma del Administrador</p>
+                <div style="font-size: 10px; color: #999; margin-top: 5px;">
+                    Departamento de Sistemas
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

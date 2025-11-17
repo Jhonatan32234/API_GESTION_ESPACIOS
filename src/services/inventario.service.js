@@ -1,106 +1,187 @@
 const AppDataSource = require("../config/ormconfig");
 const Inventario = require("../models/Inventario");
-const Espacio = require("../models/Espacio");
-const { Not } = require("typeorm");
+const CatalogoElemento = require("../models/Catalogo_Elemento");
+const EspacioInventario = require("../models/Espacio_Inventario");
+const { Not, IsNull } = require("typeorm");
 
 class InventarioService {
   constructor() {
     this.repo = AppDataSource.getRepository(Inventario);
-    this.espacioRepo = AppDataSource.getRepository(Espacio);
+    this.catalogoRepo = AppDataSource.getRepository(CatalogoElemento);
+    this.espacioInventarioRepo = AppDataSource.getRepository(EspacioInventario);
   }
 
   async getAll() {
-  return await this.repo.find({ relations: ["espacio"] });
-}
-
-async getById(id) {
-  return await this.repo.findOne({
-    where: { inventario_id: id },
-    relations: ["espacio"]
-  });
-}
-
-
-async getByEspacioConSoftware(espacio_id) {
-    const query = `
-      SELECT 
-    i.inventario_id,
-    i.nombre_elemento,
-    i.tipo,
-    i.estado,
-    i.descripcion,
-    i.marca,
-    i.modelo,
-    i.patrimonio,
-    i.observaciones,
-    s.software_id,
-    s.nombre AS software_nombre,
-    s.version AS software_version,
-    s.asignatura_requerida,
-    s.fecha_instalacion,
-    s.fecha_actualizacion
-FROM inventario i
-LEFT JOIN software s ON i.inventario_id = s.inventario_id
-WHERE i.espacio_id = ?
-    `;
-    return await AppDataSource.query(query, [espacio_id]);
+    return await this.repo.find({ 
+      relations: ["catalogo_elemento"] 
+    });
   }
+
+  async getById(id) {
+    return await this.repo.findOne({
+      where: { inventario_id: id },
+      relations: ["catalogo_elemento", "espacios", "espacios.espacio"]
+    });
+  }
+
+  async getByEspacio(espacio_id) {
+  try {        
+    const resultado = await this.espacioInventarioRepo.find({
+      where: { 
+        espacio: { espacio_id: espacio_id }
+      },
+      relations: ["inventario", "inventario.catalogo_elemento", "espacio"]
+    });
+    
+    return resultado;
+  } catch (error) {
+    throw error;
+  }
+}
+
+  async getByCatalogo(catalogo_id) {
+    return await this.repo.find({
+      where: { catalogo_elemento: { catalogo_id: catalogo_id } },
+      relations: ["catalogo_elemento", "espacios", "espacios.espacio"]
+    });
+  }
+  
+
+  async getByTipo(tipo) {
+    return await this.repo.find({
+      where: { catalogo_elemento: { tipo: tipo } },
+      relations: ["catalogo_elemento", "espacios", "espacios.espacio"]
+    });
+  }
+
+ async getDisponibles() {
+  try {
+      const query = `
+      SELECT 
+        i.*,
+        ce.nombre_elemento,
+        ce.tipo,
+        ce.descripcion as catalogo_descripcion
+      FROM inventario i
+      INNER JOIN catalogo_elemento ce ON i.catalogo_id = ce.catalogo_id
+      WHERE i.estado = 'disponible'
+      AND i.inventario_id NOT IN (
+        SELECT DISTINCT ei.inventario_id 
+        FROM espacio_inventario ei
+      )
+    `;
+    
+    const resultados = await AppDataSource.query(query);
+    
+    return resultados;
+  } catch (error) {
+    throw new Error(`Error al obtener inventario disponible: ${error.message}`);
+  }
+}
 
   async create(data) {
-  if (data.patrimonio) {
-    const existente = await this.repo.findOneBy({ patrimonio: data.patrimonio });
-    if (existente) {
-      throw new Error(`Ya existe un elemento con patrimonio "${data.patrimonio}"`);
-    }
-  }
-
-  let espacio = null;
-  if (data.espacio_id) {
-    espacio = await this.espacioRepo.findOneBy({ espacio_id: data.espacio_id });
-    if (!espacio) {
-      throw new Error(`No existe un espacio con ID "${data.espacio_id}"`);
-    }
-  }
-
-  const nuevo = this.repo.create({
-    ...data,
-    espacio: espacio 
-  });
-
-  return await this.repo.save(nuevo);
-}
-
-async update(id, data) {
-  // Verificar patrimonio único
-  if (data.patrimonio) {
-    const existente = await this.repo.findOne({
-      where: { patrimonio: data.patrimonio, inventario_id: Not(id) }
+    // Verificar que el catálogo existe
+    const catalogo = await this.catalogoRepo.findOne({
+      where: { catalogo_id: data.catalogo_id }
     });
-    if (existente) {
-      throw new Error(`Ya existe un elemento con patrimonio "${data.patrimonio}"`);
+
+    if (!catalogo) {
+      throw new Error(`No existe un elemento del catálogo con ID "${data.catalogo_id}"`);
     }
+
+    // Verificar patrimonio único (solo para equipamiento)
+    if (data.patrimonio && catalogo.tipo === 'equipamiento') {
+      const existente = await this.repo.findOne({ 
+        where: { patrimonio: data.patrimonio } 
+      });
+      if (existente) {
+        throw new Error(`Ya existe un elemento con patrimonio "${data.patrimonio}"`);
+      }
+    }
+
+    const nuevo = this.repo.create({
+      ...data,
+      catalogo_elemento: catalogo
+    });
+
+    return await this.repo.save(nuevo);
   }
 
-  let espacio = null;
-  if (data.espacio_id) {
-    espacio = await this.espacioRepo.findOneBy({ espacio_id: data.espacio_id });
-    if (!espacio) {
-      throw new Error(`No existe un espacio con ID "${data.espacio_id}"`);
+  async update(id, data) {
+    const inventarioExistente = await this.getById(id);
+    if (!inventarioExistente) {
+      throw new Error("Inventario no encontrado");
     }
+
+    // Verificar catálogo si se está actualizando
+    if (data.catalogo_id) {
+      const catalogo = await this.catalogoRepo.findOne({
+        where: { catalogo_id: data.catalogo_id }
+      });
+      if (!catalogo) {
+        throw new Error(`No existe un elemento del catálogo con ID "${data.catalogo_id}"`);
+      }
+      data.catalogo_elemento = catalogo;
+      delete data.catalogo_id;
+    }
+
+    await this.repo.update(id, data);
+    return await this.getById(id);
   }
-
-  // Actualizar inventario con la relación
-  await this.repo.update(id, {
-    ...data,
-    espacio: espacio // asignar la entidad completa
-  });
-
-  return await this.getById(id);
-}
-
 
   async delete(id) {
+    // Verificar si tiene asignaciones activas
+    const asignacionesActivas = await this.espacioInventarioRepo.find({
+      where: { 
+        inventario: { inventario_id: id },
+        activo: true 
+      }
+    });
+
+    if (asignacionesActivas.length > 0) {
+      throw new Error("No se puede eliminar el inventario porque tiene asignaciones activas. Primero quítelo de los espacios.");
+    }
+
     return await this.repo.delete(id);
+  }
+
+  async cambiarEstado(id, nuevoEstado) {
+    const estadosPermitidos = ['disponible', 'en_uso', 'mantenimiento', 'danado', 'baja'];
+    
+    if (!estadosPermitidos.includes(nuevoEstado)) {
+      throw new Error(`Estado no válido. Estados permitidos: ${estadosPermitidos.join(', ')}`);
+    }
+
+    await this.repo.update(id, { estado: nuevoEstado });
+    return await this.getById(id);
+  }
+
+  async getConSoftware() {
+    const query = `
+      SELECT 
+        i.inventario_id,
+        i.cantidad,
+        i.marca,
+        i.modelo,
+        i.patrimonio,
+        i.estado,
+        i.observaciones,
+        i.fecha_adquisicion,
+        ce.nombre_elemento,
+        ce.tipo,
+        ce.descripcion as catalogo_descripcion,
+        s.software_id,
+        s.nombre AS software_nombre,
+        s.version AS software_version,
+        s.asignatura_requerida,
+        s.fecha_instalacion,
+        s.fecha_actualizacion
+      FROM inventario i
+      INNER JOIN catalogo_elemento ce ON i.catalogo_id = ce.catalogo_id
+      LEFT JOIN software s ON i.inventario_id = s.inventario_id
+      ORDER BY ce.tipo, ce.nombre_elemento
+    `;
+    return await AppDataSource.query(query);
   }
 }
 

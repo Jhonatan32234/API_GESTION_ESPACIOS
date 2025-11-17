@@ -16,7 +16,7 @@ module.exports = new EntitySchema({
   relations: {
     inventarios: {
       type: "one-to-many",
-      target: "Inventario",
+      target: "EspacioInventario",
       inverseSide: "espacio"
     },
     ubicacion: {
