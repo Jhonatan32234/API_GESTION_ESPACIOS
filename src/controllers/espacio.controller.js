@@ -14,7 +14,24 @@ class EspacioController {
       descripcion: e.descripcion,
       disponible: e.disponible,
       ubicacion_id: e.ubicacion ? e.ubicacion.ubicacion_id : null,
-      ubicacion: e.ubicacion ? e.ubicacion.ubicacion : null // opcional: mostrar también el nombre
+      ubicacion: e.ubicacion ? e.ubicacion.ubicacion : null, // opcional: mostrar también el nombre
+      inventarios: Array.isArray(e.inventarios)
+        ? e.inventarios.map(asig => ({
+            espacio_inventario_id: asig.espacio_inventario_id,
+            inventario: asig.inventario
+              ? {
+                  inventario_id: asig.inventario.inventario_id,
+                  cantidad: asig.inventario.cantidad,
+                  marca: asig.inventario.marca,
+                  modelo: asig.inventario.modelo,
+                  patrimonio: asig.inventario.patrimonio,
+                  estado: asig.inventario.estado,
+                  observaciones: asig.inventario.observaciones,
+                  catalogo_elemento: asig.inventario.catalogo_elemento || null
+                }
+              : null
+          }))
+        : []
     }));
 
     res.json(resultado);
@@ -38,7 +55,24 @@ class EspacioController {
       descripcion: e.descripcion,
       disponible: e.disponible,
       ubicacion_id: e.ubicacion ? e.ubicacion.ubicacion_id : null,
-      ubicacion: e.ubicacion ? e.ubicacion.ubicacion : null
+      ubicacion: e.ubicacion ? e.ubicacion.ubicacion : null,
+      inventarios: Array.isArray(e.inventarios)
+        ? e.inventarios.map(asig => ({
+            espacio_inventario_id: asig.espacio_inventario_id,
+            inventario: asig.inventario
+              ? {
+                  inventario_id: asig.inventario.inventario_id,
+                  cantidad: asig.inventario.cantidad,
+                  marca: asig.inventario.marca,
+                  modelo: asig.inventario.modelo,
+                  patrimonio: asig.inventario.patrimonio,
+                  estado: asig.inventario.estado,
+                  observaciones: asig.inventario.observaciones,
+                  catalogo_elemento: asig.inventario.catalogo_elemento || null
+                }
+              : null
+          }))
+        : []
     }));
 
     res.json(resultado);

@@ -10,13 +10,28 @@ class EspacioService {
 
   async getAll() {
   return await this.repo.find({
-    relations: ["ubicacion", "tipo"], 
+    relations: [
+      "ubicacion",
+      "tipo",
+      "inventarios",
+      "inventarios.inventario",
+      "inventarios.inventario.catalogo_elemento",
+    ],
   });
 }
 
 
   async getById(id) {
-    return await this.repo.findOne({ where: { espacio_id: id }, relations: ["ubicacion", "tipo"] });
+    return await this.repo.findOne({
+      where: { espacio_id: id },
+      relations: [
+        "ubicacion",
+        "tipo",
+        "inventarios",
+        "inventarios.inventario",
+        "inventarios.inventario.catalogo_elemento",
+      ],
+    });
   }
 
   async create(data) {
@@ -125,7 +140,13 @@ class EspacioService {
   async getEspaciosByUbicacion(ubicacionId) {
     return await this.repo.find({
       where: { ubicacion: { ubicacion_id: ubicacionId } }, // filtrando por FK
-      relations: ["ubicacion", "tipo"], // incluir datos de las relaciones
+      relations: [
+        "ubicacion",
+        "tipo",
+        "inventarios",
+        "inventarios.inventario",
+        "inventarios.inventario.catalogo_elemento",
+      ], // incluir datos de las relaciones
     });
   }
 }
