@@ -26,6 +26,7 @@ const notificacionRoutes = require("./src/routes/notificacion.routes")
 const catalogoElementoRoutes = require("./src/routes/catalogo.routes");
 const espacioInventarioRoutes = require("./src/routes/espacio_inventario.routes");
 const pdfRoutes = require("./src/routes/pdf.routes");
+const tipoRoutes = require("./src/routes/tipo.routes");
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use("/api/notificacion", notificacionRoutes);
 app.use("/api/catalogo", catalogoElementoRoutes);
 app.use("/api/espacio_inventario", espacioInventarioRoutes);
 app.use("/api/pdf", pdfRoutes);
+app.use("/api/tipos", tipoRoutes);
 
 AppDataSource.initialize()
   .then(async () => {

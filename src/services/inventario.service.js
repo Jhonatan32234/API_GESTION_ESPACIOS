@@ -130,19 +130,19 @@ class InventarioService {
   }
 
   async delete(id) {
-    // Verificar si tiene asignaciones activas
-    const asignacionesActivas = await this.espacioInventarioRepo.find({
-      where: { 
-        inventario: { inventario_id: id },
-        activo: true 
-      }
-    });
-
-    if (asignacionesActivas.length > 0) {
-      throw new Error("No se puede eliminar el inventario porque tiene asignaciones activas. Primero quítelo de los espacios.");
+    // Eliminar asignaciones en espacio_inventario relacionadas con este inventario
+    try {
+      await this.espacioInventarioRepo.delete({ inventario: { inventario_id: id } });
+    } catch (err) {
+      throw new Error(`No se pudo eliminar las asignaciones de espacio_inventario para inventario ${id}: ${err.message}`);
     }
 
-    return await this.repo.delete(id);
+    // Eliminar el inventario físicamente
+    try {
+      return await this.repo.delete(id);
+    } catch (err) {
+      throw new Error(`Error al eliminar inventario ${id}: ${err.message}`);
+    }
   }
 
   async cambiarEstado(id, nuevoEstado) {

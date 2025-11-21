@@ -8,8 +8,8 @@ class EspacioController {
     const resultado = espacios.map(e => ({
       espacio_id: e.espacio_id,
       nombre: e.nombre,
-      tipo: e.tipo,
-      categoria: e.categoria,
+      tipo_id: e.tipo ? e.tipo.tipo_id : null,
+      tipo: e.tipo ? e.tipo.nombre : null,
       capacidad: e.capacidad,
       descripcion: e.descripcion,
       disponible: e.disponible,
@@ -32,8 +32,8 @@ class EspacioController {
     const resultado = espacios.map(e => ({
       espacio_id: e.espacio_id,
       nombre: e.nombre,
-      tipo: e.tipo,
-      categoria: e.categoria,
+      tipo_id: e.tipo ? e.tipo.tipo_id : null,
+      tipo: e.tipo ? e.tipo.nombre : null,
       capacidad: e.capacidad,
       descripcion: e.descripcion,
       disponible: e.disponible,
@@ -58,32 +58,32 @@ class EspacioController {
   }
 
   async create(req, res) {
-    const { nombre, tipo, categoria, ubicacionId, capacidad, descripcion, disponible } = req.body;
+    const { nombre, tipoId, ubicacionId, capacidad, descripcion, disponible, inventario } = req.body;
 
     const espacio = await espacioService.create({
       nombre,
-      tipo,
-      categoria,
-      ubicacion: { ubicacion_id: ubicacionId }, // relacionando por entidad
+      tipoId,
+      ubicacion: ubicacionId ? { ubicacion_id: ubicacionId } : undefined,
       capacidad,
       descripcion,
-      disponible
+      disponible,
+      inventario // array opcional de inventarios a crear/asignar
     });
 
     res.status(201).json(espacio);
   }
 
   async update(req, res) {
-    const { nombre, tipo, categoria, ubicacionId, capacidad, descripcion, disponible } = req.body;
+    const { nombre, tipoId, ubicacionId, capacidad, descripcion, disponible, inventario } = req.body;
 
     const espacio = await espacioService.update(req.params.id, {
       nombre,
-      tipo,
-      categoria,
+      tipoId,
       ubicacion: ubicacionId ? { ubicacion_id: ubicacionId } : undefined, // si mandan ubicacionId, actualizamos relación
       capacidad,
       descripcion,
-      disponible
+      disponible,
+      inventario // array opcional para reemplazar asignaciones
     });
 
     res.json(espacio);

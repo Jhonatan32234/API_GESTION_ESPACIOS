@@ -6,8 +6,8 @@ module.exports = new EntitySchema({
   columns: {
     espacio_id: { primary: true, type: "int", generated: true },
     nombre: { type: "varchar", length: 60 },
-    tipo: { type: "varchar", length: 20 },
-    categoria: { type: "varchar", length: 20 },
+    tipo_id: { type: "int", nullable: true },
+    
     capacidad: { type: "smallint" },
     descripcion: { type: "text", nullable: true },
     disponible: { type: "boolean", default: true },
@@ -26,5 +26,14 @@ module.exports = new EntitySchema({
       nullable: true,
       onDelete: "SET NULL"
     }
+    ,
+    tipo: {
+      type: "many-to-one",
+      target: "Tipo",
+      joinColumn: { name: "tipo_id" },
+      nullable: true,
+      onDelete: "SET NULL"
+    },
+    
   }
 });

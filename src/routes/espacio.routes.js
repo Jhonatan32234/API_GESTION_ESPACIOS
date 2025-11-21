@@ -101,12 +101,6 @@ router.get("/:id", authMiddleware(["administrador","docente"]), espacioControlle
  *             properties:
  *               nombre:
  *                 type: string
- *               tipo:
- *                 type: string
- *                 enum: [aula, laboratorio, sala_reuniones]
- *               categoria:
- *                 type: string
- *                 enum: [generica, semiequipada, equipada]
  *               ubicacionId:
  *                 type: integer
  *               capacidad:
@@ -115,6 +109,38 @@ router.get("/:id", authMiddleware(["administrador","docente"]), espacioControlle
  *                 type: string
  *               disponible:
  *                 type: boolean
+ *               tipoId:
+ *                 type: integer
+ *               inventario:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     inventario_id:
+ *                       type: integer
+ *                       description: ID de inventario existente (opcional). Si se provee, se asignará ese inventario al espacio.
+ *                     catalogo_id:
+ *                       type: integer
+ *                       description: ID del catálogo requerido para crear un nuevo inventario
+ *                     cantidad:
+ *                       type: integer
+ *                     marca:
+ *                       type: string
+ *                     modelo:
+ *                       type: string
+ *                     patrimonio:
+ *                       type: string
+ *                     estado:
+ *                       type: string
+ *                     observaciones:
+ *                       type: string
+ *                   example:
+ *                     catalogo_id: 5
+ *                     cantidad: 1
+ *                     marca: "HP"
+ *                     modelo: "ProBook"
+ *                     patrimonio: "P123"
+ *                     observaciones: "Equipo nuevo"
  *     responses:
  *       201:
  *         description: Espacio creado
@@ -144,12 +170,6 @@ router.post("/", authMiddleware(["administrador"]), espacioController.create);
  *             properties:
  *               nombre:
  *                 type: string
- *               tipo:
- *                 type: string
- *                 enum: [aula, laboratorio, sala_reuniones]
- *               categoria:
- *                 type: string
- *                 enum: [generica, semiequipada, equipaday]
  *               ubicacionId:
  *                 type: integer   
  *               capacidad:
@@ -158,6 +178,38 @@ router.post("/", authMiddleware(["administrador"]), espacioController.create);
  *                 type: string
  *               disponible:
  *                 type: boolean
+ *               tipoId:
+ *                 type: integer
+ *               inventario:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     inventario_id:
+ *                       type: integer
+ *                       description: ID de inventario existente (opcional). Si se provee, se asignará ese inventario al espacio.
+ *                     catalogo_id:
+ *                       type: integer
+ *                       description: ID del catálogo requerido para crear un nuevo inventario
+ *                     cantidad:
+ *                       type: integer
+ *                     marca:
+ *                       type: string
+ *                     modelo:
+ *                       type: string
+ *                     patrimonio:
+ *                       type: string
+ *                     estado:
+ *                       type: string
+ *                     observaciones:
+ *                       type: string
+ *                   example:
+ *                     catalogo_id: 5
+ *                     cantidad: 1
+ *                     marca: "HP"
+ *                     modelo: "ProBook"
+ *                     patrimonio: "P123"
+ *                     observaciones: "Equipo nuevo"
  *     responses:
  *       200:
  *         description: Espacio actualizado
