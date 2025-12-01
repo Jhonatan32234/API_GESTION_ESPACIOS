@@ -97,13 +97,28 @@ async getReparados() {
 
 async getPorUsuario(usuario_id) {
   return await AppDataSource.query(`
-    SELECT r.reporte_id, r.descripcion, r.fecha_reporte, r.estado,
-           u.usuario_id, u.nombre, u.apellido, u.apellido2
+    SELECT 
+      r.reporte_id, 
+      r.descripcion, 
+      r.fecha_reporte, 
+      r.estado,
+      u.usuario_id, 
+      u.nombre, 
+      u.apellido, 
+      u.apellido2,
+      e.espacio_id,
+      e.nombre as nombre_espacio,
+      ub.ubicacion_id,
+      ub.ubicacion as nombre_ubicacion
     FROM reporte_dano r
     JOIN usuario u ON r.usuario_id = u.usuario_id
+    LEFT JOIN inventario i ON r.inventario_id = i.inventario_id
+    LEFT JOIN espacio_inventario ei ON i.inventario_id = ei.inventario_id
+    LEFT JOIN espacio e ON ei.espacio_id = e.espacio_id
+    LEFT JOIN ubicacion ub ON e.ubicacion_id = ub.ubicacion_id
     WHERE r.usuario_id = ?
   `, [usuario_id]);
-  }
+}
 
  async rechazarReporte(reporteId) {
     const result = await AppDataSource.query(
