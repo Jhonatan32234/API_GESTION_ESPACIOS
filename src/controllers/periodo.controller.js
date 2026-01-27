@@ -4,70 +4,150 @@ class PeriodoController {
   async getAll(req, res) {
     try {
       const periodos = await periodoService.getAll();
-      res.json(periodos);
+      res.status(200).json(periodos);
     } catch (error) {
-      console.error('Error en getAll periodos:', error);
-      res.status(500).json({ error: "Error al obtener los periodos" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al obtener periodos", 
+        error: error.message 
+      });
     }
   }
 
   async getById(req, res) {
     try {
-      const periodo = await periodoService.getById(parseInt(req.params.id));
+      const { id } = req.params;
+      const periodo = await periodoService.getById(id);
+      
       if (!periodo) {
-        return res.status(404).json({ mensaje: "Periodo no encontrado" });
+        return res.status(404).json({ 
+          success: false, 
+          message: "Periodo no encontrado" 
+        });
       }
-      res.json(periodo);
+      
+      res.status(200).json(periodo);
     } catch (error) {
-      console.error('Error en getById periodos:', error);
-      res.status(500).json({ error: "Error al obtener el periodo" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al obtener periodo", 
+        error: error.message 
+      });
     }
   }
 
   async create(req, res) {
     try {
-      const { fecha_inicio, fecha_fin, tipo_periodo } = req.body;
-
-      if (!fecha_inicio || !fecha_fin || !tipo_periodo) {
-        return res.status(400).json({ 
-          mensaje: "fecha_inicio, fecha_fin y tipo_periodo son requeridos" 
-        });
-      }
-
       const result = await periodoService.create(req.body);
-      if (result.error) {
-        return res.status(400).json({ mensaje: result.error });
+      
+      if (result.success === false) {
+        return res.status(400).json(result);
       }
+      
       res.status(201).json(result);
     } catch (error) {
-      console.error('Error en create periodos:', error);
-      res.status(500).json({ error: "Error al crear el periodo" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al crear periodo", 
+        error: error.message 
+      });
     }
   }
 
   async update(req, res) {
     try {
-      const result = await periodoService.update(parseInt(req.params.id), req.body);
-      if (result.error) {
-        return res.status(400).json({ mensaje: result.error });
+      const { id } = req.params;
+      const result = await periodoService.update(id, req.body);
+      
+      if (result.success === false) {
+        return res.status(400).json(result);
       }
-      res.json(result);
+      
+      res.status(200).json(result);
     } catch (error) {
-      console.error('Error en update periodos:', error);
-      res.status(500).json({ error: "Error al actualizar el periodo" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al actualizar periodo", 
+        error: error.message 
+      });
     }
   }
 
   async delete(req, res) {
     try {
-      const result = await periodoService.delete(parseInt(req.params.id));
-      if (result.error) {
-        return res.status(404).json({ mensaje: result.error });
+      const { id } = req.params;
+      const result = await periodoService.delete(id);
+      
+      if (result.success === false) {
+        return res.status(404).json(result);
       }
+      
       res.status(200).json(result);
     } catch (error) {
-      console.error('Error en delete periodos:', error);
-      res.status(500).json({ error: "Error al eliminar el periodo" });
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al eliminar periodo", 
+        error: error.message 
+      });
+    }
+  }
+
+  async activarPeriodo(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await periodoService.activarPeriodo(id);
+      
+      if (result.success === false) {
+        return res.status(400).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al activar periodo", 
+        error: error.message 
+      });
+    }
+  }
+
+  async desactivarPeriodo(req, res) {
+    try {
+      const { id } = req.params;
+      const result = await periodoService.desactivarPeriodo(id);
+      
+      if (result.success === false) {
+        return res.status(400).json(result);
+      }
+      
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al desactivar periodo", 
+        error: error.message 
+      });
+    }
+  }
+
+  async getPeriodoActivo(req, res) {
+    try {
+      const periodo = await periodoService.getPeriodoActivo();
+      
+      if (!periodo) {
+        return res.status(404).json({ 
+          success: false, 
+          message: "No hay periodo activo actualmente" 
+        });
+      }
+      
+      res.status(200).json(periodo);
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        message: "Error al obtener periodo activo", 
+        error: error.message 
+      });
     }
   }
 }

@@ -80,23 +80,6 @@ async marcarEnProceso(req, res) {
   }
 }
 
-async actualizarReporte(req, res) {
-  try {
-    const { reporteId } = req.params;
-    const data = req.body;
-
-    const result = await reportedanoservice.actualizarReporte(reporteId, data);
-
-    if (result.success === false) {
-      return res.status(400).json({ mensaje: result.message });
-    }
-
-    res.status(200).json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ mensaje: "Error al actualizar el reporte", error: error.message });
-  }
-}
 
 async marcarReparado(req, res) {
   try {

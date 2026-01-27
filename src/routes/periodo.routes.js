@@ -19,7 +19,6 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *       required:
  *         - fecha_inicio
  *         - fecha_fin
- *         - tipo_periodo
  *       properties:
  *         periodo_id:
  *           type: integer
@@ -32,10 +31,6 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *           type: string
  *           format: date
  *           description: Fecha de fin del periodo
- *         tipo_periodo:
- *           type: string
- *           enum: [Enero-Abril, Mayo-Agosto, Septiembre-Diciembre, Verano, Invierno]
- *           description: Tipo de periodo académico
  *         activo:
  *           type: boolean
  *           default: true
@@ -46,13 +41,13 @@ const authMiddleware = require("../middlewares/auth.middleware");
  * @swagger
  * /api/periodos:
  *   get:
- *     summary: Obtener todos los periodos activos
+ *     summary: Obtener todos los periodos activos/inactivos
  *     tags: [Periodos]
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Lista de periodos activos
+ *         description: Lista de periodos activos/inactivos
  *         content:
  *           application/json:
  *             schema:
@@ -61,6 +56,44 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *                 $ref: '#/components/schemas/Periodo'
  */
 router.get("/", authMiddleware(["administrador", "docente"]), periodoController.getAll);
+
+/**
+ * @swagger
+ * /api/periodos/activo:
+ *   get:
+ *     summary: Obtener el periodo activo actual
+ *     description: Retorna el único periodo que está marcado como activo en el sistema.
+ *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Periodo activo encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Periodo'
+ *       404:
+ *         description: No hay periodo activo actualmente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "No hay periodo activo actualmente"
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get("/activo", authMiddleware(["administrador", "docente"]), periodoController.getPeriodoActivo);
 
 /**
  * @swagger
@@ -102,20 +135,15 @@ router.get("/:id", authMiddleware(["administrador", "docente"]), periodoControll
  *             required:
  *               - fecha_inicio
  *               - fecha_fin
- *               - tipo_periodo
  *             properties:
  *               fecha_inicio:
  *                 type: string
  *                 format: date
- *                 example: "aaaa-mm-dd"
+ *                 example: "2024-01-01"
  *               fecha_fin:
  *                 type: string
  *                 format: date
- *                 example: "aaaa-mm-dd"
- *               tipo_periodo:
- *                 type: string
- *                 enum: [Enero-Abril, Mayo-Agosto, Septiembre-Diciembre]
- *                 example: "Enero-Abril"
+ *                 example: "2024-04-30"
  *     responses:
  *       201:
  *         description: Periodo creado exitosamente
@@ -123,6 +151,96 @@ router.get("/:id", authMiddleware(["administrador", "docente"]), periodoControll
  *         description: Error de validación (fechas solapadas, etc.)
  */
 router.post("/", authMiddleware(["administrador"]), periodoController.create);
+
+/**
+ * @swagger
+ * /api/periodos/{id}/activar:
+ *   put:
+ *     summary: Activar un periodo específico
+ *     description: |
+ *       Activa un periodo y desactiva automáticamente cualquier otro periodo activo.
+ *       Validaciones:
+ *       - No permite activar un periodo si ya hay otro activo (aunque se maneja internamente)
+ *       - El periodo debe existir
+ *       - Si el periodo ya está activo, retorna mensaje informativo
+ *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del periodo a activar
+ *     responses:
+ *       200:
+ *         description: Periodo activado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: |
+ *           Error de validación:
+ *           - Ya existe un periodo activo
+ *           - Periodo no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: No autorizado - requiere rol de administrador
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put("/:id/activar", authMiddleware(["administrador"]), periodoController.activarPeriodo);
+
+/**
+ * @swagger
+ * /api/periodos/{id}/desactivar:
+ *   put:
+ *     summary: Desactivar un periodo específico
+ *     description: |
+ *       Desactiva un periodo específico.
+ *       Si el periodo ya está inactivo, retorna mensaje informativo.
+ *     tags: [Periodos]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del periodo a desactivar
+ *     responses:
+ *       200:
+ *         description: Periodo desactivado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Periodo no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: No autorizado - requiere rol de administrador
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put("/:id/desactivar", authMiddleware(["administrador"]), periodoController.desactivarPeriodo);
 
 /**
  * @swagger
@@ -149,14 +267,11 @@ router.post("/", authMiddleware(["administrador"]), periodoController.create);
  *               fecha_inicio:
  *                 type: string
  *                 format: date
- *                 example: "aaaa-mm-dd"
+ *                 example: "2024-01-01"
  *               fecha_fin:
  *                 type: string
  *                 format: date
- *                 example: "aaaa-mm-dd"
- *               tipo_periodo:
- *                 type: string
- *                 enum: [Enero-Abril, Mayo-Agosto, Septiembre-Diciembre, Verano, Invierno]
+ *                 example: "2024-04-30"
  *     responses:
  *       200:
  *         description: Periodo actualizado
@@ -171,7 +286,7 @@ router.put("/:id", authMiddleware(["administrador"]), periodoController.update);
  * @swagger
  * /api/periodos/{id}:
  *   delete:
- *     summary: Marcar un periodo como inactivo
+ *     summary: Eliminar un periodo
  *     tags: [Periodos]
  *     security:
  *       - cookieAuth: []
@@ -184,7 +299,7 @@ router.put("/:id", authMiddleware(["administrador"]), periodoController.update);
  *         description: ID del periodo
  *     responses:
  *       200:
- *         description: Periodo marcado como inactivo
+ *         description: Periodo eliminado
  *       404:
  *         description: Periodo no encontrado
  */
