@@ -10,29 +10,112 @@ async aprobarSolicitud(solicitud_id, usuario_id) {
   return result;
 }
 
-async rechazarSolicitudNormal(solicitud_id) {
-    try {
-        const result = await AppDataSource.query(
-            `CALL rechazar_solicitud_normal(?)`,
-            [solicitud_id]
-        );
-        return { success: true, data: result };
-    } catch (error) {
-        console.error('Error en rechazarSolicitudNormal:', error);
-        
-        // Manejar diferentes códigos de error SQL
-        if (error.code === 'ER_SIGNAL_EXCEPTION') {
-            // Error personalizado del procedimiento almacenado
-            if (error.sqlState === '45002') {
-                throw new Error('CONFLICTO_APROBADAS: No se puede rechazar la solicitud. Existe un conflicto pendiente con otra solicitud aprobada que debe ser resuelto primero.');
-            } else if (error.sqlState === '45001') {
-                throw new Error('SOLICITUD_NO_EXISTE: La solicitud no existe.');
-            }
-        }
-        
-        // Error genérico de base de datos
-        throw new Error(`ERROR_BASE_DATOS: Error al rechazar la solicitud: ${error.message}`);
+
+async obtenerHorarioPorEspacio(espacio_id) {
+  const periodoService = require("./periodo.service");
+  const periodoActivo = await periodoService.getPeriodoActivo();
+  console.log("Periodo activo:", periodoActivo);
+  
+  if (!periodoActivo) {
+    throw new Error("No hay un periodo activo configurado");
+  }
+
+  // Consulta para obtener las reservas
+  const query = `
+    SELECT 
+      sh.dia_semana,
+      TIME_FORMAT(sh.hora_inicio, '%H:%i') as hora_inicio,
+      TIME_FORMAT(sh.hora_fin, '%H:%i') as hora_fin
+    FROM solicitud s
+    INNER JOIN solicitud_horario sh ON s.solicitud_id = sh.solicitud_id
+    LEFT JOIN materia m ON s.materia_id = m.materia_id
+    WHERE s.espacio_id = ?
+      AND s.periodo_id = ?
+      AND s.estado = 'aprobada'
+      AND sh.dia_semana BETWEEN 1 AND 5
+    ORDER BY sh.dia_semana, sh.hora_inicio
+  `;
+
+  const resultados = await AppDataSource.query(query, [
+    espacio_id, 
+    periodoActivo.periodo_id
+  ]);
+
+  // Función para generar horas individuales
+  const generarHorasIndividuales = (hora_inicio, hora_fin) => {
+    const horas = [];
+    const inicio = new Date(`2000-01-01T${hora_inicio}:00`);
+    const fin = new Date(`2000-01-01T${hora_fin}:00`);
+    
+    // Restar una hora porque queremos el inicio de cada bloque
+    let horaActual = new Date(inicio);
+    
+    while (horaActual < fin) {
+      const horaStr = horaActual.toTimeString().slice(0, 5); // Formato HH:mm
+      horas.push(horaStr);
+      // Incrementar en 1 hora
+      horaActual.setHours(horaActual.getHours() + 1);
     }
+    
+    return horas;
+  };
+
+  const horarioPorDia = {
+    1: [], // Lunes
+    2: [], // Martes
+    3: [], // Miércoles
+    4: [], // Jueves
+    5: []  // Viernes
+  };
+
+  resultados.forEach(reserva => {
+    const dia = reserva.dia_semana;
+    const horasIndividuales = generarHorasIndividuales(reserva.hora_inicio, reserva.hora_fin);
+    
+    horasIndividuales.forEach(hora => {
+      horarioPorDia[dia].push({
+        hora: hora
+      });
+    });
+  });
+
+  // Eliminar duplicados por hora (si hay solapamientos)
+  Object.keys(horarioPorDia).forEach(dia => {
+    const horasUnicas = [];
+    const horasVistas = new Set();
+    
+    horarioPorDia[dia].forEach(item => {
+      if (!horasVistas.has(item.hora)) {
+        horasVistas.add(item.hora);
+        horasUnicas.push(item);
+      }
+    });
+    
+    horarioPorDia[dia] = horasUnicas.sort((a, b) => a.hora.localeCompare(b.hora));
+  });
+
+  const diasSemana = {
+    1: 'lunes',
+    2: 'martes',
+    3: 'miércoles',
+    4: 'jueves',
+    5: 'viernes'
+  };
+
+  const respuesta = {
+    espacio_id: parseInt(espacio_id),
+    periodo_id: periodoActivo.periodo_id
+  };
+
+  // Agregar solo los días que tienen reservas
+  Object.keys(horarioPorDia).forEach(diaNum => {
+    if (horarioPorDia[diaNum].length > 0) {
+      const nombreDia = diasSemana[diaNum];
+      respuesta[nombreDia] = horarioPorDia[diaNum];
+    }
+  });
+
+  return respuesta;
 }
 
 async getSolicitudesNormalesPorUsuario(usuario_id) {
@@ -43,7 +126,6 @@ async getSolicitudesNormalesPorUsuario(usuario_id) {
       s.cantidad_asistentes,
       u.nombre AS usuario,
       e.nombre AS espacio,
-      p.tipo_periodo AS periodo,
       m.nombre AS materia,
       s.grupo,
       s.motivo,
@@ -98,7 +180,7 @@ async getCalendarioPorPeriodo(espacio_id, periodo_id = null) {
 
     if (!periodoConsulta) {
       const periodoPorFechaQuery = `
-        SELECT periodo_id, fecha_inicio, fecha_fin, tipo_periodo 
+        SELECT periodo_id, fecha_inicio, fecha_fin 
         FROM periodo 
         WHERE CURDATE() BETWEEN fecha_inicio AND fecha_fin
         ORDER BY fecha_inicio DESC 
@@ -115,7 +197,7 @@ async getCalendarioPorPeriodo(espacio_id, periodo_id = null) {
     }
 
     const periodoExistente = await AppDataSource.query(
-      `SELECT periodo_id, fecha_inicio, fecha_fin, tipo_periodo, activo FROM periodo WHERE periodo_id = ?`,
+      `SELECT periodo_id, fecha_inicio, fecha_fin, activo FROM periodo WHERE periodo_id = ?`,
       [periodoConsulta]
     );
 
@@ -241,7 +323,6 @@ async getCalendarioPorPeriodo(espacio_id, periodo_id = null) {
       },
       periodo: {
         id: periodoInfo.periodo_id,
-        tipo: periodoInfo.tipo_periodo,
         fecha_inicio: periodoInfo.fecha_inicio,
         fecha_fin: periodoInfo.fecha_fin,
         activo: periodoInfo.activo === 1,
@@ -443,7 +524,6 @@ async getSolicitudes() {
       u.nombre AS usuario,
       e.nombre AS espacio,
       ub.ubicacion AS ubicacion,
-      p.tipo_periodo AS periodo,
       m.nombre AS materia,
       pe.nombre_carrera AS plan_estudio,
       s.grupo,
@@ -485,14 +565,13 @@ async getSolicitudes() {
   return result;
 }
 
-  async getSolicitudesPendRech() {
+  async getAll() {
   const result = await AppDataSource.query(`
     SELECT 
       s.solicitud_id,
       u.nombre AS usuario,
       e.nombre AS espacio,
       ub.ubicacion AS ubicacion,
-      p.tipo_periodo AS periodo,
       m.nombre AS materia,
       s.grupo,
       s.motivo,
@@ -505,7 +584,6 @@ async getSolicitudes() {
           WHERE s2.solicitud_id != s.solicitud_id
             AND s2.espacio_id = s.espacio_id
             AND s2.periodo_id = s.periodo_id
-            AND s2.estado IN ('pendiente', 'aprobada')
             AND sh1.dia_semana = sh2.dia_semana
             AND (
               (sh1.hora_inicio < sh2.hora_fin AND sh1.hora_fin > sh2.hora_inicio) OR
@@ -544,7 +622,6 @@ async getSolicitudes() {
     LEFT JOIN periodo p ON p.periodo_id = s.periodo_id
     LEFT JOIN materia m ON m.materia_id = s.materia_id
     LEFT JOIN plan_estudio pe ON pe.plan_id = m.plan_id
-    WHERE s.estado IN ('pendiente', 'rechazada')
     ORDER BY 
       CASE 
         WHEN estado = 'pendiente-en-conflicto' THEN 1

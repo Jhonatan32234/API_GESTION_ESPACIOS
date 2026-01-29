@@ -10,6 +10,43 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *   description: Solicitudes especiales (eventos puntuales)
  */
 
+
+/**
+ * @swagger
+ * /api/solicitud_especial/aprobadas:
+ *   get:
+ *     summary: Obtener todas las solicitudes especiales aprobadas
+ *     tags: [SolicitudEspecial]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de solicitudes especiales aprobadas
+ */
+router.get("/aprobadas", authMiddleware(["administrador", "docente"]), solicitudEspecialController.listarAprobadas);
+
+
+/**
+ * @swagger
+ * /api/solicitud_especial/{espacio_id}:
+ *   get:
+ *     summary: Obtener horario de solicitudes especiales de un espacio
+ *     tags: [SolicitudEspecial]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: espacio_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del espacio
+ *     responses:
+ *       200:
+ *         description: Horario de solicitudes especiales
+ */
+router.get("/:espacio_id", authMiddleware(["administrador", "docente"]), solicitudEspecialController.obtenerHorarioPorEspacio);
+
 /**
  * @swagger
  * /api/solicitud_especial:
@@ -57,7 +94,6 @@ const authMiddleware = require("../middlewares/auth.middleware");
  *         description: Error al registrar la solicitud especial
  */
 router.post("/", authMiddleware(["administrador", "docente"]), solicitudEspecialController.insertar);
-
 
 /**
  * @swagger
@@ -133,47 +169,6 @@ router.post("/rechazar/:solicitud_especial_id", authMiddleware(["administrador"]
 
 /**
  * @swagger
- * /api/solicitud_especial/aprobadas:
- *   get:
- *     summary: Listar solicitudes especiales aprobadas
- *     description: Obtiene todas las solicitudes especiales aprobadas. Solo pueden acceder usuarios con rol **administrador** o **docente**.
- *     tags: [SolicitudEspecial]
- *     security:
- *       - cookieAuth: []
- *     responses:
- *       200:
- *         description: Lista de solicitudes aprobadas.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                     example: 12
- *                   usuario_id:
- *                     type: integer
- *                     example: 3
- *                   espacio_id:
- *                     type: integer
- *                     example: 5
- *                   fecha:
- *                     type: string
- *                     format: date
- *                     example: 2025-08-23
- *                   motivo:
- *                     type: string
- *                     example: "Conferencia académica"
- *                   estado:
- *                     type: string
- *                     example: "aprobada"
- */
-router.get("/aprobadas", authMiddleware(["administrador", "docente"]), solicitudEspecialController.listarAprobadas);
-
-/**
- * @swagger
  * /api/solicitud_especial/usuario/{usuario_id}/:
  *   get:
  *     summary: Obtener todas las solicitudes especiales de un usuario
@@ -191,7 +186,7 @@ router.get("/aprobadas", authMiddleware(["administrador", "docente"]), solicitud
  *       200:
  *         description: Lista de solicitudes especiales del usuario
  */
-router.get("/usuario/:usuario_id", authMiddleware(["administrador", "docente"]), solicitudEspecialController.getSolicitudesEspecialesPorUsuario);
+router.get("/usuario/:usuario_id", authMiddleware(["administrador", "docente"]), solicitudEspecialController.listarAprobadas);
 
 
 

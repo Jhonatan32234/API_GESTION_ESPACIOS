@@ -23,6 +23,18 @@ async getSolicitudesNormalesPorUsuario(req, res) {
   }
 }
 
+async obtenerHorarioEspacio(req, res) {
+    try {
+      const { espacio_id } = req.params;
+      
+      let horario;
+      horario = await solicitudService.obtenerHorarioPorEspacio(espacio_id);
+      res.json(horario);
+    } catch (error) {
+      console.error(error);
+      res.status(400).json({ error: error.message });
+    }
+  }
 
 async aprobarSolicitud(req, res) {
   try {
@@ -128,9 +140,9 @@ async getSolicitudes(req, res) {
     }
   }
 
-  async getSolicitudesPendRech(req, res) {
+  async getAll(req, res) {
     try {
-      const solicitudes = await solicitudService.getSolicitudesPendRech();
+      const solicitudes = await solicitudService.getAll();
       res.json(solicitudes);
     } catch (error) {
       console.error(error);

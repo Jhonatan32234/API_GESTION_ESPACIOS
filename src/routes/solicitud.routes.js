@@ -54,6 +54,50 @@ const authMiddleware = require("../middlewares/auth.middleware");
  */
 router.post("/normal", authMiddleware(["administrador", "docente"]), solicitudController.insertarSolicitudNormal);
 
+/**
+ * @swagger
+ * /api/solicitudes/horario/{espacio_id}:
+ *   get:
+ *     summary: Obtener horario de reservas de un espacio
+ *     tags: [Solicitudes]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: espacio_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del espacio
+ *     responses:
+ *       200:
+ *         description: Horario del espacio
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 espacio_id:
+ *                   type: integer
+ *                 periodo_id:
+ *                   type: integer
+ *                 periodo_activo:
+ *                   type: string
+ *                 lunes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       hora:
+ *                         type: string
+ *                         example: "08:00-09:00"
+ *                       grupo:
+ *                         type: string
+ *                       materia:
+ *                         type: string
+ *                
+ */
+router.get("/horario/:espacio_id", authMiddleware(["administrador", "docente"]), solicitudController.obtenerHorarioEspacio);
 
 /**
  * @swagger
@@ -131,7 +175,7 @@ router.post("/aprobar/:solicitud_id/:usuario_id", authMiddleware(["administrador
 router.put("/rechazar/:id", authMiddleware(["administrador"]), solicitudController.rechazarNormal);
 
 /**
- * @swagger
+ * swagger
  * /api/solicitudes/calendario:
  *   get:
  *     summary: Obtener calendario de reservas (estilo tabla) por espacio y periodo
@@ -158,11 +202,11 @@ router.put("/rechazar/:id", authMiddleware(["administrador"]), solicitudControll
  *         description: Falta el parámetro espacio_id
  */
 
-router.get("/calendario", authMiddleware(["administrador", "docente"]), solicitudController.getCalendario);
+//router.get("/calendario", authMiddleware(["administrador", "docente"]), solicitudController.getCalendario);
 
 
 /**
- * @swagger
+ * swagger
  * /api/solicitudes/semanal:
  *   get:
  *     summary: Obtener solicitudes aprobadas agrupadas por semanas de un mes específico
@@ -245,7 +289,7 @@ router.get("/calendario", authMiddleware(["administrador", "docente"]), solicitu
  *       400:
  *         description: Parámetro mes faltante o inválido
  */
-router.get("/semanal", authMiddleware(["administrador", "docente"]), solicitudController.getSolicitudesPorSemana);
+//router.get("/semanal", authMiddleware(["administrador", "docente"]), solicitudController.getSolicitudesPorSemana);
 
 /**
  * @swagger
@@ -290,17 +334,17 @@ router.get("/aprobadas", authMiddleware(["administrador", "docente"]),  solicitu
 
 /**
  * @swagger
- * /api/solicitudes/pend-rech:
+ * /api/solicitudes/:
  *   get:
- *     summary: Obtener solicitudes pendientes y rechazadas
+ *     summary: Obtener todas las solicitudes
  *     tags: [Solicitudes]
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Lista de solicitudes pendientes y rechazadas
+ *         description: Lista de solicitudes
  */
-router.get("/pend-rech", authMiddleware(["administrador", "docente"]), solicitudController.getSolicitudesPendRech);
+router.get("/", authMiddleware(["administrador", "docente"]), solicitudController.getAll);
 
 
 module.exports = router;

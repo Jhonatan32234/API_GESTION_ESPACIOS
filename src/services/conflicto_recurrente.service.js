@@ -51,7 +51,6 @@ class ConflictoRecurrenteService {
           cr.espacio_id,
           e.nombre as espacio_nombre,
           cr.periodo_id,
-          p.tipo_periodo,
           cr.solicitud_id_1,
           cr.solicitud_id_2,
           cr.ganador_solicitud_id,
@@ -83,7 +82,6 @@ class ConflictoRecurrenteService {
         SELECT 
           cr.*,
           e.nombre as espacio_nombre,
-          p.tipo_periodo,
           p.fecha_inicio,
           p.fecha_fin,
           s1.grupo as grupo_solicitud_1,

@@ -10,6 +10,13 @@ class PeriodoService {
     ];
   }
 
+   async getPeriodoActivo() {
+    return await this.repo.findOne({
+      where: { activo: 1 },
+      order: { periodo_id: 'DESC' } // Obtener el más reciente
+    });
+  }
+
   // Método para parsear fecha YYYY-MM-DD sin problemas de zona horaria
   _parsearFechaISO(fechaStr) {
     if (!fechaStr) return null;
