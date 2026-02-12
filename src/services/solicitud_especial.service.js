@@ -155,9 +155,8 @@ async getSolicitudesEspeciales() {
     const query = `
       SELECT 
         se.solicitud_especial_id,
-        u.nombre AS usuario,
-        e.nombre AS espacio,
         ub.ubicacion AS ubicacion,
+        e.nombre AS espacio_nombre,
         se.fecha,
         se.hora_inicio,
         se.hora_fin,
@@ -169,7 +168,6 @@ async getSolicitudesEspeciales() {
       LEFT JOIN usuario u ON u.usuario_id = se.usuario_id
       LEFT JOIN espacio e ON e.espacio_id = se.espacio_id
       LEFT JOIN ubicacion ub ON ub.ubicacion_id = e.ubicacion_id
-      WHERE se.estado = 'aprobada'
       ORDER BY se.fecha DESC;
     `;
    ;
@@ -177,7 +175,7 @@ async getSolicitudesEspeciales() {
   
     return result;
   } catch (error) {
-    throw error; // Propaga el error
+    throw error;
   }
 }
 

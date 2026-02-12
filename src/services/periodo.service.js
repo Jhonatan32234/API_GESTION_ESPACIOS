@@ -281,73 +281,75 @@ class PeriodoService {
   }
 
   async update(id, data) {
-    try {
-      const actual = await this.getById(id);
-      if (!actual) {
-        return { success: false, message: "Periodo no encontrado o inactivo" };
-      }
-
-      const { fecha_inicio, fecha_fin } = data;
-      const nuevaFechaInicio = fecha_inicio || actual.fecha_inicio;
-      const nuevaFechaFin = fecha_fin || actual.fecha_fin;
-
-      // Validar que fecha_inicio sea menor que fecha_fin
-      if (new Date(nuevaFechaInicio) >= new Date(nuevaFechaFin)) {
-        return { success: false, message: "La fecha de inicio debe ser anterior a la fecha de fin" };
-      }
-
-      // Validar que no exista otro periodo con las mismas fechas (excluyendo el actual)
-      const periodoExistente = await this.repo.findOne({
-        where: {
-          fecha_inicio: nuevaFechaInicio,
-          fecha_fin: nuevaFechaFin,
-          activo: true
-        }
-      });
-
-      if (periodoExistente && periodoExistente.periodo_id !== parseInt(id)) {
-        return { success: false, message: "Ya existe otro periodo con las mismas fechas" };
-      }
-
-      // Validar solapamiento con otros periodos (excluyendo el actual)
-      const periodoSolapado = await this.repo
-        .createQueryBuilder('periodo')
-        .where('periodo.activo = :activo', { activo: true })
-        .andWhere('periodo.periodo_id != :id', { id })
-        .andWhere(new Date(nuevaFechaFin).toISOString().split('T')[0] + ' BETWEEN periodo.fecha_inicio AND periodo.fecha_fin')
-        .orWhere(new Date(nuevaFechaInicio).toISOString().split('T')[0] + ' BETWEEN periodo.fecha_inicio AND periodo.fecha_fin')
-        .orWhere('periodo.fecha_inicio BETWEEN :fecha_inicio AND :fecha_fin', {
-          fecha_inicio: nuevaFechaInicio,
-          fecha_fin: nuevaFechaFin
-        })
-        .orWhere('periodo.fecha_fin BETWEEN :fecha_inicio AND :fecha_fin', {
-          fecha_inicio: nuevaFechaInicio,
-          fecha_fin: nuevaFechaFin
-        })
-        .getOne();
-
-      if (periodoSolapado) {
-        return { success: false, message: "Las fechas se solapan con otro periodo activo" };
-      }
-
-      // Actualizar el periodo
-      await this.repo.update(id, {
-        fecha_inicio: nuevaFechaInicio,
-        fecha_fin: nuevaFechaFin
-      });
-
-      const periodoActualizado = await this.getById(id);
-      
-      return {
-        success: true,
-        message: "Periodo actualizado correctamente",
-        periodo: periodoActualizado
-      };
-
-    } catch (error) {
-      throw new Error(`Error al actualizar periodo: ${error.message}`);
+  try {
+    const actual = await this.getById(id);
+    if (!actual) {
+      return { success: false, message: "Periodo no encontrado o inactivo" };
     }
+
+    const { fecha_inicio, fecha_fin } = data;
+    const nuevaFechaInicio = fecha_inicio || actual.fecha_inicio;
+    const nuevaFechaFin = fecha_fin || actual.fecha_fin;
+
+    // Validar que fecha_inicio sea menor que fecha_fin
+    if (new Date(nuevaFechaInicio) >= new Date(nuevaFechaFin)) {
+      return { success: false, message: "La fecha de inicio debe ser anterior a la fecha de fin" };
+    }
+
+    // Validar que no exista otro periodo con las mismas fechas (excluyendo el actual)
+    const periodoExistente = await this.repo.findOne({
+      where: {
+        fecha_inicio: nuevaFechaInicio,
+        fecha_fin: nuevaFechaFin,
+        activo: true
+      }
+    });
+
+    if (periodoExistente && periodoExistente.periodo_id !== parseInt(id)) {
+      return { success: false, message: "Ya existe otro periodo con las mismas fechas" };
+    }
+
+    // Validar solapamiento con otros periodos (excluyendo el actual)
+    const periodoSolapado = await this.repo
+      .createQueryBuilder('periodo')
+      .where('periodo.activo = :activo', { activo: true })
+      .andWhere('periodo.periodo_id != :id', { id })
+      .andWhere(
+        `(
+          :nuevaFechaInicio BETWEEN periodo.fecha_inicio AND periodo.fecha_fin
+          OR :nuevaFechaFin BETWEEN periodo.fecha_inicio AND periodo.fecha_fin
+          OR periodo.fecha_inicio BETWEEN :nuevaFechaInicio AND :nuevaFechaFin
+          OR periodo.fecha_fin BETWEEN :nuevaFechaInicio AND :nuevaFechaFin
+        )`,
+        {
+          nuevaFechaInicio,
+          nuevaFechaFin
+        }
+      )
+      .getOne();
+
+    if (periodoSolapado) {
+      return { success: false, message: "Las fechas se solapan con otro periodo activo" };
+    }
+
+    // Actualizar el periodo
+    await this.repo.update(id, {
+      fecha_inicio: nuevaFechaInicio,
+      fecha_fin: nuevaFechaFin
+    });
+
+    const periodoActualizado = await this.getById(id);
+    
+    return {
+      success: true,
+      message: "Periodo actualizado correctamente",
+      periodo: periodoActualizado
+    };
+
+  } catch (error) {
+    throw new Error(`Error al actualizar periodo: ${error.message}`);
   }
+}
 
   async delete(id) {
     try {

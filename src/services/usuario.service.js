@@ -14,6 +14,56 @@ class UsuarioService {
     });
   }
 
+  async activar(id) {
+    try {
+      const usuario = await this.repo.findOne({
+        where: { usuario_id: id }
+      });
+
+      if (!usuario) {
+        return { success: false, message: "Usuario no encontrado" };
+      }
+
+      if (usuario.activo === true) {
+        return { success: false, message: "El usuario ya se encuentra activo" };
+      }
+
+      await this.repo.update(id, { activo: true });
+
+      return {
+        success: true,
+        message: "Usuario activado correctamente"
+      };
+    } catch (error) {
+      throw new Error(`Error al activar usuario: ${error.message}`);
+    }
+  }
+
+  async desactivar(id) {
+    try {
+      const usuario = await this.repo.findOne({
+        where: { usuario_id: id }
+      });
+
+      if (!usuario) {
+        return { success: false, message: "Usuario no encontrado" };
+      }
+
+      if (usuario.activo === false) {
+        return { success: false, message: "El usuario ya se encuentra inactivo" };
+      }
+
+      await this.repo.update(id, { activo: false });
+
+      return {
+        success: true,
+        message: "Usuario desactivado correctamente"
+      };
+    } catch (error) {
+      throw new Error(`Error al desactivar usuario: ${error.message}`);
+    }
+  }
+
   async getById(id) {
     return await this.repo.findOneBy({ usuario_id: id });
   }

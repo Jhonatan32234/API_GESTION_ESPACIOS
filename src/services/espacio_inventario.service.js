@@ -114,7 +114,6 @@ class EspacioInventarioService {
 
  async getInventarioDisponible() {
   try {
-    console.log('Buscando inventario disponible...');
     
     const query = `
       SELECT 
@@ -133,7 +132,6 @@ class EspacioInventarioService {
     `;
     
     const resultados = await AppDataSource.query(query);
-    console.log(`Encontrados ${resultados.length} elementos disponibles`);
     return resultados;
   } catch (error) {
     console.error('Error en getInventarioDisponible:', error);

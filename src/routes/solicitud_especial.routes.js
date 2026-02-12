@@ -13,17 +13,17 @@ const authMiddleware = require("../middlewares/auth.middleware");
 
 /**
  * @swagger
- * /api/solicitud_especial/aprobadas:
+ * /api/solicitud_especial:
  *   get:
- *     summary: Obtener todas las solicitudes especiales aprobadas
+ *     summary: Obtener todas las solicitudes especiales
  *     tags: [SolicitudEspecial]
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Lista de solicitudes especiales aprobadas
+ *         description: Lista de solicitudes especiales
  */
-router.get("/aprobadas", authMiddleware(["administrador", "docente"]), solicitudEspecialController.listarAprobadas);
+router.get("", authMiddleware(["administrador", "docente"]), solicitudEspecialController.getAll);
 
 
 /**
@@ -186,7 +186,7 @@ router.post("/rechazar/:solicitud_especial_id", authMiddleware(["administrador"]
  *       200:
  *         description: Lista de solicitudes especiales del usuario
  */
-router.get("/usuario/:usuario_id", authMiddleware(["administrador", "docente"]), solicitudEspecialController.listarAprobadas);
+router.get("/usuario/:usuario_id", authMiddleware(["administrador", "docente"]), solicitudEspecialController.getSolicitudesEspecialesPorUsuario);
 
 
 

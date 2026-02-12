@@ -16,16 +16,10 @@ const inventarioRoutes = require("./src/routes/inventario.routes");
 const solicitudRoutes = require("./src/routes/solicitud.routes");
 const plan_estudioRoutes = require("./src/routes/plan_estudio.routes");
 const ubicacionRoutes = require("./src/routes/ubicacion.routes");
-const reservaRoutes = require("./src/routes/reserva.routes");
 const solicitud_especialRoutes = require("./src/routes/solicitud_especial.routes");
-const conflicto_recurrenteRoutes = require("./src/routes/conflicto_recurrente.routes");  
 const reporte_danoRoutes = require("./src/routes/reporte_dano.routes");
-const mantenimientoRoutes = require("./src/routes/mantenimiento.routes");
-const softwareRoutes = require("./src/routes/software.routes");
-const notificacionRoutes = require("./src/routes/notificacion.routes")
 const catalogoElementoRoutes = require("./src/routes/catalogo.routes");
 const espacioInventarioRoutes = require("./src/routes/espacio_inventario.routes");
-const pdfRoutes = require("./src/routes/pdf.routes");
 const tipoRoutes = require("./src/routes/tipo.routes");
 
 const app = express();
@@ -52,17 +46,11 @@ app.use("/api/inventario", inventarioRoutes);
 app.use("/api/solicitudes", solicitudRoutes);
 app.use("/api/planes", plan_estudioRoutes);
 app.use("/api/ubicaciones", ubicacionRoutes);
-app.use("/api/reservas", reservaRoutes);
 app.use("/api/solicitud_especial", solicitud_especialRoutes);
-app.use("/api/conflicto_recurrente", conflicto_recurrenteRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reporte", reporte_danoRoutes);
-app.use("/api/mantenimiento", mantenimientoRoutes);
-app.use("/api/software", softwareRoutes);
-app.use("/api/notificacion", notificacionRoutes);
 app.use("/api/catalogo", catalogoElementoRoutes);
 app.use("/api/espacio_inventario", espacioInventarioRoutes);
-app.use("/api/pdf", pdfRoutes);
 app.use("/api/tipos", tipoRoutes);
 
 AppDataSource.initialize()

@@ -14,7 +14,6 @@ async aprobarSolicitud(solicitud_id, usuario_id) {
 async obtenerHorarioPorEspacio(espacio_id) {
   const periodoService = require("./periodo.service");
   const periodoActivo = await periodoService.getPeriodoActivo();
-  console.log("Periodo activo:", periodoActivo);
   
   if (!periodoActivo) {
     throw new Error("No hay un periodo activo configurado");

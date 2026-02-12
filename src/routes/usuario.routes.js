@@ -83,6 +83,69 @@ router.post("/", usuarioController.create);
 
 /**
  * @swagger
+ * /api/usuarios/{id}/activar:
+ *   put:
+ *     summary: Activar un usuario
+ *     tags: [Usuarios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Usuario activado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Usuario activado correctamente
+ *                 usuario:
+ *                   type: object
+ *       400:
+ *         description: Error al activar usuario
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/:id/activar", usuarioController.activarUsuario);
+
+/**
+ * @swagger
+ * /api/usuarios/{id}/desactivar:
+ *   put:
+ *     summary: Desactivar un usuario
+ *     tags: [Usuarios]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Usuario desactivado correctamente
+ *       400:
+ *         description: Error al desactivar usuario
+ *       404:
+ *         description: Usuario no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.put("/:id/desactivar", usuarioController.desactivarUsuario);
+
+/**
+ * @swagger
  * /api/usuarios/{id}:
  *   put:
  *     summary: Actualizar usuario

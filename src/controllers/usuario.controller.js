@@ -12,6 +12,34 @@ class UsuarioController {
     usuario ? res.json(usuario) : res.status(404).json({ mensaje: "No encontrado" });
   }
 
+  activarUsuario = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await usuarioService.activar(id);
+      
+      return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: `Error al activar usuario: ${error.message}`
+      });
+    }
+  };
+
+  desactivarUsuario = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await usuarioService.desactivar(id);
+      
+      return res.status(result.success ? 200 : 400).json(result);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: `Error al desactivar usuario: ${error.message}`
+      });
+    }
+  };
+
   async create(req, res) {
   try {
     const usuario = await usuarioService.create(req.body);

@@ -15,14 +15,11 @@ class SolicitudEspecialController {
   }
   
   async obtenerHorarioPorEspacio(req, res) {
-    console.log("Solicitud para obtener horario por espacio recibida");
     try {
       const { espacio_id } = req.params;
-      console.log("espacio_id recibido:", espacio_id);
       
       let horario;
       horario = await solicitudEspecialService.obtenerHorarioPorEspacio(espacio_id);
-      console.log("Horario obtenido:", horario);
       
       res.json(horario);
     } catch (error) {
@@ -76,18 +73,18 @@ async getSolicitudesEspecialesPorUsuario(req, res) {
 }
 
 
-async listarAprobadas(req, res) {
+async getAll(req, res) {
   try {
     const data = await solicitudEspecialService.getSolicitudesEspeciales();
    
     if (data.length === 0) {
-      return res.json([]); // Devuelve array vacío en lugar de error
+      return res.json([]);
     }
     
     res.json(data);
   } catch (error) {
     res.status(500).json({ 
-      mensaje: "Error al obtener solicitudes especiales aprobadas", 
+      mensaje: "Error al obtener solicitudes especiales", 
       error: error.message,
     });
   }
