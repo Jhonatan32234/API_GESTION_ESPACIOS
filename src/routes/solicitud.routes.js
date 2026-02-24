@@ -293,6 +293,62 @@ router.put("/rechazar/:id", authMiddleware(["administrador"]), solicitudControll
 
 /**
  * @swagger
+ * /api/solicitudes/conflictos:
+ *   get:
+ *     summary: Obtener todas las solicitudes que están en conflicto
+ *     description: |
+ *       Retorna una lista de espacios que tienen solicitudes en conflicto.
+ *       Un conflicto ocurre cuando dos o más solicitudes (pendientes o aprobadas) se solapan en horario para el mismo espacio y día de la semana.
+ *       La respuesta está agrupada por espacio.
+ *     tags: [Solicitudes]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de espacios con sus solicitudes en conflicto.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   espacio_id:
+ *                     type: integer
+ *                     description: ID del espacio.
+ *                   espacio_nombre:
+ *                     type: string
+ *                     description: Nombre del espacio.
+ *                   solicitudes_en_conflicto:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         solicitud_id:
+ *                           type: integer
+ *                         grupo:
+ *                           type: string
+ *                         motivo:
+ *                           type: string
+ *                         estado:
+ *                           type: string
+ *                         fecha_creacion:
+ *                           type: string
+ *                           format: date-time
+ *                         usuario_id:
+ *                           type: integer
+ *                         usuario_nombre:
+ *                           type: string
+ *                         horarios:
+ *                           type: string
+ *                           description: Resumen de los días y horas de la solicitud.
+ *       500:
+ *         description: Error del servidor.
+ */
+router.get("/conflictos", authMiddleware(["administrador"]), solicitudController.getConflictos);
+
+/**
+ * @swagger
  * /api/solicitudes/aprobadas:
  *   get:
  *     summary: Obtener todas las solicitudes aprobadas

@@ -301,29 +301,23 @@ DROP PROCEDURE IF EXISTS rechazar_solicitud_normal;
 CREATE PROCEDURE rechazar_solicitud_normal(IN p_solicitud_id INT)
 BEGIN
     DECLARE v_usuario_id INT;
-    DECLARE v_tiene_reservas BOOLEAN DEFAULT FALSE;
-    DECLARE v_tiene_conflicto_aprobadas BOOLEAN DEFAULT FALSE;
-    DECLARE v_espacio_id INT;
-    DECLARE v_periodo_id INT;
+    DECLARE v_estado_actual VARCHAR(20);
     DECLARE v_conflicto_count INT;
 
+    -- Iniciar transacción
+    START TRANSACTION;
+
     -- Verificar si la solicitud existe
-    IF NOT EXISTS (SELECT 1 FROM solicitud WHERE solicitud_id = p_solicitud_id) THEN
-        SIGNAL SQLSTATE '45001' 
-        SET MESSAGE_TEXT = 'La solicitud no existe.';
-    END IF;
-
-    -- Obtener información de la solicitud
-    SELECT usuario_id, espacio_id, periodo_id
-    INTO v_usuario_id, v_espacio_id, v_periodo_id
+    SELECT estado, usuario_id
+    INTO v_estado_actual, v_usuario_id
     FROM solicitud
-    WHERE solicitud_id = p_solicitud_id;
+    WHERE solicitud_id = p_solicitud_id
+    FOR UPDATE; -- Bloquear la fila
 
-    -- Verificar si existen reservas asociadas a la solicitud
-    SELECT COUNT(*) > 0
-    INTO v_tiene_reservas
-    FROM reserva
-    WHERE solicitud_id = p_solicitud_id;
+    IF v_usuario_id IS NULL THEN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45001' SET MESSAGE_TEXT = 'La solicitud no existe.';
+    END IF;
 
     -- Verificar si existe conflicto con otra solicitud normal APROBADA
     SELECT COUNT(*)
@@ -338,19 +332,14 @@ BEGIN
           AND s.solicitud_id <> p_solicitud_id
       );
 
-    SET v_tiene_conflicto_aprobadas = (v_conflicto_count > 0);
-
-    -- Si hay conflicto entre solicitudes aprobadas, cancelar el proceso
-    IF v_tiene_conflicto_aprobadas THEN
-        SIGNAL SQLSTATE '45002' 
-        SET MESSAGE_TEXT = 'No se puede rechazar la solicitud. Existe un conflicto pendiente con otra solicitud aprobada que debe ser resuelto primero.';
+    IF v_conflicto_count > 0 THEN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45002' SET MESSAGE_TEXT = 'No se puede rechazar. Existe un conflicto con otra solicitud aprobada que debe resolverse primero.';
     END IF;
 
-    -- Si no hay conflicto, proceder con el rechazo normal
-    IF v_tiene_reservas THEN
-        -- Eliminar todas las reservas asociadas
-        DELETE FROM reserva
-        WHERE solicitud_id = p_solicitud_id;
+    -- Si la solicitud estaba aprobada, eliminar sus reservas
+    IF v_estado_actual = 'aprobada' THEN
+        DELETE FROM reserva WHERE solicitud_id = p_solicitud_id;
     END IF;
 
     -- Marcar la solicitud como rechazada
@@ -360,39 +349,20 @@ BEGIN
 
     -- Crear notificación al usuario
     IF NOT EXISTS (
-        SELECT 1
-        FROM notificacion
-        WHERE usuario_id = v_usuario_id
-          AND relacion_id = p_solicitud_id
-          AND relacion_tipo = 'solicitud'
-          AND mensaje LIKE 'Tu solicitud ha sido rechazada'
+        SELECT 1 FROM notificacion
+        WHERE usuario_id = v_usuario_id AND relacion_id = p_solicitud_id AND relacion_tipo = 'solicitud' AND mensaje LIKE 'Tu solicitud ha sido rechazada%'
     ) THEN
-        INSERT INTO notificacion(
-            usuario_id,
-            tipo,
-            mensaje,
-            fecha_envio,
-            leida,
-            enviado,
-            relacion_id,
-            relacion_tipo
-        )
-        VALUES (
-            v_usuario_id,
-            'solicitud',
-            'Tu solicitud ha sido rechazada.',
-            NOW(),
-            FALSE,
-            FALSE,
-            p_solicitud_id,
-            'solicitud'
-        );
+        INSERT INTO notificacion(usuario_id, tipo, mensaje, relacion_id, relacion_tipo)
+        VALUES (v_usuario_id, 'solicitud', 'Tu solicitud ha sido rechazada.', p_solicitud_id, 'solicitud');
     END IF;
 
-    -- También eliminar cualquier conflicto pendiente relacionado con esta solicitud
+    -- Eliminar cualquier conflicto pendiente relacionado con esta solicitud
     DELETE FROM conflicto_recurrente
     WHERE estado = 'pendiente'
       AND (solicitud_id_1 = p_solicitud_id OR solicitud_id_2 = p_solicitud_id);
+
+    -- Confirmar transacción
+    COMMIT;
 
 END;
 

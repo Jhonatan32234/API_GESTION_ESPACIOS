@@ -10,6 +10,27 @@ async aprobarSolicitud(solicitud_id, usuario_id) {
   return result;
 }
 
+async rechazarSolicitudNormal(solicitud_id) {
+  try {
+    const result = await AppDataSource.query(
+      `CALL rechazar_solicitud_normal(?)`,
+      [solicitud_id]
+    );
+    return result;
+  } catch (error) {
+    if (error.code === 'ER_SIGNAL_EXCEPTION') {
+      if (error.sqlMessage.includes('La solicitud no existe')) {
+        throw new Error('SOLICITUD_NO_EXISTE: ' + error.sqlMessage);
+      }
+      if (error.sqlMessage.includes('No se puede rechazar')) {
+        throw new Error('CONFLICTO_APROBADAS: ' + error.sqlMessage);
+      }
+    }
+    console.error("Error en rechazarSolicitudNormal:", error);
+    throw new Error('ERROR_BASE_DATOS: Ocurrió un error al procesar la solicitud en la base de datos.');
+  }
+}
+
 
 async obtenerHorarioPorEspacio(espacio_id) {
   const periodoService = require("./periodo.service");
@@ -167,6 +188,80 @@ async getSolicitudesNormalesPorUsuario(usuario_id) {
 
   return nuevaSolicitud;
 }
+
+async getSolicitudesConConflicto() {
+  const query = `
+    SELECT
+        s.solicitud_id,
+        s.grupo,
+        s.motivo,
+        s.estado,
+        s.fecha_creacion,
+        e.espacio_id,
+        e.nombre AS espacio_nombre,
+        u.usuario_id,
+        u.nombre AS usuario_nombre,
+        (
+            SELECT GROUP_CONCAT(
+              CONCAT(
+                CASE sh.dia_semana
+                  WHEN 1 THEN 'Lun' WHEN 2 THEN 'Mar' WHEN 3 THEN 'Mié'
+                  WHEN 4 THEN 'Jue' WHEN 5 THEN 'Vie' WHEN 6 THEN 'Sáb'
+                  WHEN 7 THEN 'Dom'
+                END,
+                ' ', TIME_FORMAT(sh.hora_inicio, '%H:%i'), '-', TIME_FORMAT(sh.hora_fin, '%H:%i')
+              ) SEPARATOR '; '
+            )
+            FROM solicitud_horario sh
+            WHERE sh.solicitud_id = s.solicitud_id
+        ) AS horarios
+    FROM
+        solicitud s
+    JOIN
+        espacio e ON s.espacio_id = e.espacio_id
+    JOIN
+        usuario u ON s.usuario_id = u.usuario_id
+    WHERE
+        s.solicitud_id IN (
+            SELECT DISTINCT s1.solicitud_id
+            FROM solicitud s1
+            JOIN solicitud_horario sh1 ON s1.solicitud_id = sh1.solicitud_id
+            WHERE s1.estado IN ('pendiente', 'aprobada')
+              AND EXISTS (
+                SELECT 1
+                FROM solicitud s2
+                JOIN solicitud_horario sh2 ON s2.solicitud_id = sh2.solicitud_id
+                WHERE s2.espacio_id = s1.espacio_id
+                  AND s2.solicitud_id <> s1.solicitud_id
+                  AND s2.estado IN ('pendiente', 'aprobada')
+                  AND sh1.dia_semana = sh2.dia_semana
+                  AND (sh1.hora_inicio < sh2.hora_fin AND sh1.hora_fin > sh2.hora_inicio)
+              )
+        )
+    ORDER BY
+        e.nombre, s.fecha_creacion;
+  `;
+
+  const solicitudesEnConflicto = await AppDataSource.query(query);
+
+  // Agrupar por espacio
+  const espaciosConConflictos = {};
+  solicitudesEnConflicto.forEach(solicitud => {
+    const { espacio_id, espacio_nombre, ...solicitudData } = solicitud;
+    if (!espaciosConConflictos[espacio_id]) {
+      espaciosConConflictos[espacio_id] = {
+        espacio_id,
+        espacio_nombre,
+        solicitudes_en_conflicto: []
+      };
+    }
+    espaciosConConflictos[espacio_id].solicitudes_en_conflicto.push(solicitudData);
+  });
+
+  return Object.values(espaciosConConflictos);
+}
+
+
 
 
 async getCalendarioPorPeriodo(espacio_id, periodo_id = null) {

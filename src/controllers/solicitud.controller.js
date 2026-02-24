@@ -64,12 +64,12 @@ async rechazarNormal(req, res) {
         if (error.message.includes('CONFLICTO_APROBADAS')) {
             return res.status(409).json({ 
                 success: false,
-                mensaje: error.message.split(': ')[1] // Remover el prefijo
+                mensaje: error.message.split(': ')[1]
             });
         } else if (error.message.includes('SOLICITUD_NO_EXISTE')) {
             return res.status(404).json({ 
                 success: false,
-                mensaje: error.message.split(': ')[1] // Remover el prefijo
+                mensaje: error.message.split(': ')[1]
             });
         } else if (error.message.includes('ERROR_BASE_DATOS')) {
             return res.status(500).json({ 
@@ -127,6 +127,16 @@ async getSolicitudesPorSemana(req, res) {
     res.status(500).json({ 
       mensaje: error.message || "Error obteniendo solicitudes semanales" 
     });
+  }
+}
+
+async getConflictos(req, res) {
+  try {
+    const conflictos = await solicitudService.getSolicitudesConConflicto();
+    res.json(conflictos);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ mensaje: error.message || "Error obteniendo las solicitudes en conflicto" });
   }
 }
 
