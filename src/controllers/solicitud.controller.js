@@ -3,14 +3,43 @@ const solicitudService = require("../services/solicitud.service");
 class SolicitudController {
 
   async insertarSolicitudNormal(req, res) {
-    try {
-      await solicitudService.insertarSolicitudNormal(req.body);
-      res.status(201).json({ mensaje: "Solicitud insertada correctamente" });
-    } catch (error) {
-      console.error(error);
-      res.status(400).json({ error: error.message });
+  try {
+    const nuevaSolicitud = await solicitudService.insertarSolicitudNormal(req.body);
+    
+    return res.status(201).json({ 
+      success: true,
+      mensaje: "Solicitud enviada correctamente. Se encuentra en estado pendiente.",
+      solicitud_id: nuevaSolicitud.solicitud_id 
+    });
+
+  } catch (error) {
+    console.error("Error en insertarSolicitudNormal:", error.message);
+
+    // Manejo de errores personalizados lanzados desde SQL
+    if (error.message.includes('CONF_ERR')) {
+      return res.status(409).json({ 
+        success: false, 
+        error: "Conflicto de Horario",
+        detalle: "El salón ya está reservado para ese horario. Por favor revisa el calendario." 
+      });
     }
+
+    if (error.message.includes('VAL_ERR')) {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Datos Inválidos",
+        detalle: "La hora de finalización debe ser posterior a la de inicio." 
+      });
+    }
+
+    // Error genérico del servidor
+    res.status(500).json({ 
+      success: false, 
+      error: "Error interno",
+      detalle: "No pudimos procesar tu solicitud en este momento." 
+    });
   }
+}
 
 async getSolicitudesNormalesPorUsuario(req, res) {
   try {
@@ -41,12 +70,28 @@ async aprobarSolicitud(req, res) {
     const solicitud_id = parseInt(req.params.solicitud_id);
     const usuario_id = parseInt(req.params.usuario_id);
 
-    await solicitudService.aprobarSolicitud(solicitud_id, usuario_id);
+    const resultado = await solicitudService.aprobarSolicitud(solicitud_id, usuario_id);
 
-    res.status(200).json({ mensaje: "Solicitud aprobada correctamente" });
+    res.status(200).json({ 
+      success: true,
+      mensaje: "Solicitud aprobada y conflictos resueltos correctamente.",
+      data: resultado 
+    });
   } catch (error) {
-    console.error(error);
-    res.status(400).json({ error: error.message });
+    console.error("Error al aprobar:", error.message);
+
+    // Si el error viene de nuestro SIGNAL SQLSTATE en MySQL
+    if (error.message.includes('Error:') || error.message.includes('No se puede')) {
+      return res.status(400).json({ 
+        success: false, 
+        error: error.message.replace('ER_SIGNAL_EXCEPTION: ', '') 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      error: "Ocurrió un error inesperado al procesar la aprobación." 
+    });
   }
 }
 

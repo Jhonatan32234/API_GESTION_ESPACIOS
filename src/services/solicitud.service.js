@@ -3,11 +3,49 @@ const AppDataSource = require("../config/ormconfig");
 class SolicitudService {
 
 async aprobarSolicitud(solicitud_id, usuario_id) {
-  const result = await AppDataSource.query(
-    `CALL aprobar_solicitud_normal(?, ?)`,
-    [solicitud_id, usuario_id]
-  );
-  return result;
+    // 1. Obtener datos de la solicitud actual para verificar estado y conflictos
+    const solicitudActual = await AppDataSource.query(
+        `SELECT estado, espacio_id, periodo_id FROM solicitud WHERE solicitud_id = ?`,
+        [solicitud_id]
+    );
+
+    if (solicitudActual.length === 0) {
+        throw new Error("La solicitud no existe.");
+    }
+
+    if (solicitudActual[0].estado === 'aprobada') {
+        throw new Error("Esta solicitud ya se encuentra aprobada.");
+    }
+
+    if (solicitudActual[0].estado === 'rechazada') {
+        throw new Error("No se puede aprobar una solicitud que ya fue rechazada.");
+    }
+
+    // 2. Verificar si el horario se ocupó mientras esta solicitud estaba pendiente
+    const conflictoAprobado = await AppDataSource.query(`
+        SELECT s.solicitud_id 
+        FROM solicitud s
+        JOIN solicitud_horario sh_aprobada ON s.solicitud_id = sh_aprobada.solicitud_id
+        JOIN solicitud_horario sh_actual ON sh_actual.solicitud_id = ?
+        WHERE s.espacio_id = ? 
+          AND s.periodo_id = ?
+          AND s.estado = 'aprobada'
+          AND sh_aprobada.dia_semana = sh_actual.dia_semana
+          AND (sh_aprobada.hora_inicio < sh_actual.hora_fin AND sh_aprobada.hora_fin > sh_actual.hora_inicio)
+        LIMIT 1
+    `, [solicitud_id, solicitudActual[0].espacio_id, solicitudActual[0].periodo_id]);
+
+    if (conflictoAprobado.length > 0) {
+        throw new Error("No se puede aprobar: Otro usuario ya ocupa este horario.");
+    }
+
+    // 3. Si todo está bien, proceder con el STORED PROCEDURE
+    const result = await AppDataSource.query(
+        `CALL aprobar_solicitud_normal(?, ?)`,
+        [solicitud_id, usuario_id]
+    );
+    
+    return result;
 }
 
 async rechazarSolicitudNormal(solicitud_id) {
@@ -117,7 +155,7 @@ async obtenerHorarioPorEspacio(espacio_id) {
   const diasSemana = {
     1: 'lunes',
     2: 'martes',
-    3: 'miércoles',
+    3: 'miercoles',
     4: 'jueves',
     5: 'viernes'
   };
@@ -168,25 +206,29 @@ async getSolicitudesNormalesPorUsuario(usuario_id) {
 
 
   async insertarSolicitudNormal(data) {
-  const result = await AppDataSource.query(
-    `CALL insertar_solicitud_normal(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      data.usuario_id,
-      data.espacio_id,
-      data.periodo_id,
-      data.materia_id,
-      data.grupo,
-      data.motivo,
-      data.cantidad_asistentes,
-      JSON.stringify(data.dias),
-      data.hora_inicio,
-      data.hora_fin
-    ]
-  );
+  try {
+    const result = await AppDataSource.query(
+      `CALL insertar_solicitud_normal(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        data.usuario_id,
+        data.espacio_id,
+        data.periodo_id,
+        data.materia_id,
+        data.grupo,
+        data.motivo,
+        data.cantidad_asistentes,
+        JSON.stringify(data.dias),
+        data.hora_inicio,
+        data.hora_fin
+      ]
+    );
 
-  const nuevaSolicitud = result[0][0];
-
-  return nuevaSolicitud;
+    // El ID de la solicitud suele venir en result[0][0]
+    return result[0][0]; 
+  } catch (error) {
+    // Relanzamos el error para que el controller lo maneje
+    throw error;
+  }
 }
 
 async getSolicitudesConConflicto() {
