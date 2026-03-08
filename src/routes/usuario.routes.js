@@ -117,7 +117,7 @@ router.post("/", usuarioController.create);
  *       500:
  *         description: Error del servidor
  */
-router.put("/:id/activar", usuarioController.activarUsuario);
+router.put("/:id/activar", authMiddleware(['administrador']),usuarioController.activarUsuario);
 
 /**
  * @swagger
@@ -142,7 +142,7 @@ router.put("/:id/activar", usuarioController.activarUsuario);
  *       500:
  *         description: Error del servidor
  */
-router.put("/:id/desactivar", usuarioController.desactivarUsuario);
+router.put("/:id/desactivar",authMiddleware(['administrador']), usuarioController.desactivarUsuario);
 
 /**
  * @swagger
@@ -169,7 +169,7 @@ router.put("/:id/desactivar", usuarioController.desactivarUsuario);
  *       200:
  *         description: Usuario actualizado
  */
-router.put("/:id", authMiddleware(["administrador"]), usuarioController.update);
+router.put("/:id",  authMiddleware(["administrador", "docente"]), usuarioController.update);
 
 /**
  * @swagger

@@ -39,30 +39,38 @@ class UsuarioService {
     }
   }
 
-  async desactivar(id) {
-    try {
-      const usuario = await this.repo.findOne({
-        where: { usuario_id: id }
+  async desactivar(idParaDesactivar, idDelAdministradorQueEjecuta) {
+  try {
+    // 1. Evitar que el admin se desactive a sí mismo
+    if (String(idParaDesactivar) === String(idDelAdministradorQueEjecuta)) {
+      return { success: false, message: "No puedes desactivar tu propia cuenta. Solicítalo a otro administrador." };
+    }
+
+    const usuario = await this.repo.findOne({ where: { usuario_id: idParaDesactivar } });
+
+    if (!usuario) {
+      return { success: false, message: "Usuario no encontrado" };
+    }
+
+    // 2. Si el usuario es admin, verificar que no sea el último activo en el sistema
+    if (usuario.rol === 'admin' && usuario.activo === true) {
+      const totalAdminsActivos = await this.repo.count({
+        where: { rol: 'admin', activo: true }
       });
 
-      if (!usuario) {
-        return { success: false, message: "Usuario no encontrado" };
+      if (totalAdminsActivos <= 1) {
+        return { success: false, message: "Operación denegada: Debe existir al menos un administrador activo en el sistema." };
       }
-
-      if (usuario.activo === false) {
-        return { success: false, message: "El usuario ya se encuentra inactivo" };
-      }
-
-      await this.repo.update(id, { activo: false });
-
-      return {
-        success: true,
-        message: "Usuario desactivado correctamente"
-      };
-    } catch (error) {
-      throw new Error(`Error al desactivar usuario: ${error.message}`);
     }
+
+    // 3. Proceder con la desactivación
+    await this.repo.update(idParaDesactivar, { activo: false });
+
+    return { success: true, message: "Usuario desactivado correctamente" };
+  } catch (error) {
+    throw new Error(`Error al desactivar usuario: ${error.message}`);
   }
+}
 
   async getById(id) {
     return await this.repo.findOneBy({ usuario_id: id });
@@ -90,10 +98,16 @@ class UsuarioService {
   return usuarioResponse;
 }
 
-  async update(id, data) {
+  async update(id, data, solicitorId) {
+    // 4. Evitar desactivarse a sí mismo mediante el update general
+    if (data.activo === false && parseInt(id) === parseInt(solicitorId)) {
+       throw new Error("No puedes desactivarte a ti mismo a través de la actualización de perfil");
+    }
+
     if (data.contrasena) {
       data.contrasena = await bcrypt.hash(data.contrasena, 10);
     }
+    
     await this.repo.update(id, data);
     return await this.getById(id);
   }
@@ -103,25 +117,29 @@ class UsuarioService {
   }
 
   async login(email, contrasena) {
-  const usuario = await this.repo.findOne({
-    where: { email },
-    select: ["usuario_id", "nombre", "apellido", "apellido2", "rol", "contrasena"] // incluir contrasena para comparar
-  });
+    const usuario = await this.repo.findOne({
+      where: { email },
+      // Importante: incluimos 'activo' en el select para validarlo
+      select: ["usuario_id", "nombre", "apellido", "apellido2", "rol", "contrasena", "activo"]
+    });
 
-  if (!usuario) return null;
+    if (!usuario) return null;
 
-  const match = await bcrypt.compare(contrasena, usuario.contrasena);
-  if (!match) return null;
+    // 3. Validar si el usuario está activo antes de comparar la contraseña
+    if (!usuario.activo) {
+        throw new Error("Tu cuenta está desactivada. Contacta al administrador.");
+    }
 
-  // Devolvemos solo lo necesario
-  return {
-    usuario_id: usuario.usuario_id,
-    nombre: usuario.nombre,
-    apellido: usuario.apellido,
-    apellido2: usuario.apellido2,
-    rol: usuario.rol
-  };
-}
+    const match = await bcrypt.compare(contrasena, usuario.contrasena);
+    if (!match) return null;
+
+    return {
+      usuario_id: usuario.usuario_id,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      rol: usuario.rol
+    };
+  }
 
 }
 

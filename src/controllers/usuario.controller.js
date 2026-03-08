@@ -27,18 +27,25 @@ class UsuarioController {
   };
 
   desactivarUsuario = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const result = await usuarioService.desactivar(id);
-      
-      return res.status(result.success ? 200 : 400).json(result);
-    } catch (error) {
-      return res.status(500).json({
+  try {
+    const { id } = req.params;
+    const solicitorId = req.usuario.id;
+
+    const result = await usuarioService.desactivar(id, solicitorId);
+
+    if (!result.success) {
+      // Enviamos el mensaje que definimos en el Service ("No puedes desactivar tu propia cuenta", etc.)
+      return res.status(400).json({
         success: false,
-        message: `Error al desactivar usuario: ${error.message}`
+        message: result.message 
       });
     }
-  };
+
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
   async create(req, res) {
   try {
@@ -67,8 +74,13 @@ class UsuarioController {
 }
 
   async update(req, res) {
-    const usuario = await usuarioService.update(req.params.id, req.body);
-    res.json(usuario);
+    try {
+        const solicitorId = req.user.id;
+        const usuario = await usuarioService.update(req.params.id, req.body, solicitorId);
+        res.json(usuario);
+    } catch (error) {
+        res.status(400).json({ mensaje: error.message });
+    }
   }
 
   async delete(req, res) {
@@ -77,6 +89,7 @@ class UsuarioController {
   }
 
   async login(req, res) {
+    try {
   const { email, contrasena } = req.body;
   const usuario = await usuarioService.login(email, contrasena);
 
@@ -97,6 +110,9 @@ class UsuarioController {
     mensaje: "Login exitoso",
     usuario
   });
+} catch (error) {
+  res.status(403).json({ mensaje: error.message });
+}
 }
 
  async logout(req, res) {
