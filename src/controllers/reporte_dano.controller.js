@@ -19,10 +19,14 @@ class ReporteDanoController {
     }
   }
 
-  async getPendientesEnProceso(req, res) {
-    const result = await reportedanoservice.getPendientesEnProceso();
-    res.json(result);
-  }
+  async getAllGrouped(req, res) {
+    try {
+        const result = await reportedanoservice.getAllReportesAgrupados();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ message: "Error al obtener reportes", error: error.message });
+    }
+}
 
   async getReparados(req, res) {
     const result = await reportedanoservice.getReparados();

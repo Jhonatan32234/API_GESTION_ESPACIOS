@@ -75,14 +75,68 @@ class ReporteDanoService {
   }
 }
 
-  async getPendientesEnProceso() {
-  return await AppDataSource.query(`
-    SELECT r.reporte_id, r.descripcion, r.fecha_reporte, r.estado, r.inventario_id,
-           u.usuario_id, u.nombre, u.apellido, u.apellido2
-    FROM reporte_dano r
-    JOIN usuario u ON r.usuario_id = u.usuario_id
-    WHERE r.estado IN ('pendiente','en_proceso')
-  `);
+ async getAllReportesAgrupados() {
+    const rawData = await AppDataSource.query(`
+        SELECT 
+            ub.ubicacion_id, 
+            ub.ubicacion AS nombre_ubicacion,
+            e.espacio_id, 
+            e.nombre AS nombre_espacio,
+            r.reporte_id, 
+            r.descripcion, 
+            r.estado, 
+            r.fecha_reporte,
+            u.nombre AS usuario_nombre, 
+            u.apellido AS usuario_apellido,
+            ce.nombre_elemento AS item_danado
+        FROM ubicacion ub
+        JOIN espacio e ON ub.ubicacion_id = e.ubicacion_id
+        JOIN espacio_inventario ei ON e.espacio_id = ei.espacio_id
+        JOIN inventario i ON ei.inventario_id = i.inventario_id
+        JOIN reporte_dano r ON i.inventario_id = r.inventario_id
+        JOIN usuario u ON r.usuario_id = u.usuario_id
+        JOIN catalogo_elemento ce ON i.catalogo_id = ce.catalogo_id
+        ORDER BY ub.ubicacion, e.nombre, r.fecha_reporte DESC
+    `);
+
+    // Agrupación de datos en formato jerárquico
+    const agrupado = rawData.reduce((acc, curr) => {
+        // 1. Buscar o crear la ubicación
+        let ubicacion = acc.find(u => u.id_ubicacion === curr.ubicacion_id);
+        if (!ubicacion) {
+            ubicacion = {
+                id_ubicacion: curr.ubicacion_id,
+                nombre_ubicacion: curr.nombre_ubicacion,
+                espacios: []
+            };
+            acc.push(ubicacion);
+        }
+
+        // 2. Buscar o crear el espacio dentro de la ubicación
+        let espacio = ubicacion.espacios.find(e => e.id_espacio === curr.espacio_id);
+        if (!espacio) {
+            espacio = {
+                id_espacio: curr.espacio_id,
+                nombre_espacio: curr.nombre_espacio,
+                reportes: []
+            };
+            ubicacion.espacios.push(espacio);
+        }
+
+        // 3. Agregar el reporte al espacio
+        espacio.reportes.push({
+            reporte_id: curr.reporte_id,
+            descripcion: curr.descripcion,
+            estado: curr.estado,
+            fecha: curr.fecha_reporte,
+            elemento: curr.item_danado,
+            reportado_por: `${curr.usuario_nombre} ${curr.usuario_apellido}`
+        });
+
+        return acc;
+    }, []);
+
+    return agrupado;
 }
 
 async getReparados() {

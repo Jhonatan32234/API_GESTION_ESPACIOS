@@ -39,17 +39,17 @@ router.post("/", authMiddleware(["administrador", "docente"]), reportedanocontro
 
 /**
  * @swagger
- * /api/reporte/pendientes:
+ * /api/reporte:
  *   get:
- *     summary: Obtener reportes pendientes y en proceso
+ *     summary: Obtener reportes
  *     tags: [Reporte de Daño]
  *     security:
  *       - cookieAuth: []
  *     responses:
  *       200:
- *         description: Lista de reportes pendientes o en proceso
+ *         description: Lista de reportes
  */
-router.get("/pendientes", authMiddleware(["administrador", "docente"]), reportedanocontroller.getPendientesEnProceso);
+router.get("/", authMiddleware(["administrador", "docente"]), reportedanocontroller.getAllGrouped);
 
 /**
  * @swagger
