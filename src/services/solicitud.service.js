@@ -64,7 +64,6 @@ async rechazarSolicitudNormal(solicitud_id) {
         throw new Error('CONFLICTO_APROBADAS: ' + error.sqlMessage);
       }
     }
-    console.error("Error en rechazarSolicitudNormal:", error);
     throw new Error('ERROR_BASE_DATOS: Ocurrió un error al procesar la solicitud en la base de datos.');
   }
 }

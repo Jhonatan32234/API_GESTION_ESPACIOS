@@ -134,7 +134,6 @@ class EspacioInventarioService {
     const resultados = await AppDataSource.query(query);
     return resultados;
   } catch (error) {
-    console.error('Error en getInventarioDisponible:', error);
     throw error;
   }
 }

@@ -14,7 +14,6 @@ class ReporteDanoController {
       res.status(201).json({ mensaje: "Reporte insertado correctamente", result });
 
     } catch (error) {
-      console.error(error);
       res.status(500).json({ mensaje: "Error al insertar el reporte", error: error.message });
     }
   }
@@ -50,7 +49,6 @@ class ReporteDanoController {
         result
       });
     } catch (error) {
-      console.error(error);
       res.status(500).json({ mensaje: "Error al rechazar el reporte", error: error.message });
     }
   }
@@ -68,7 +66,6 @@ class ReporteDanoController {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ mensaje: "Error al actualizar el reporte", error: error.message });
   }
 }
@@ -79,7 +76,6 @@ async marcarEnProceso(req, res) {
     const result = await reportedanoservice.marcarEnProceso(reporteId);
     res.status(200).json(result);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ mensaje: "Error al marcar en proceso", error: error.message });
   }
 }
@@ -91,7 +87,6 @@ async marcarReparado(req, res) {
     const result = await reportedanoservice.marcarReparado(reporteId);
     res.status(200).json(result);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ mensaje: "Error al marcar reparado", error: error.message });
   }
 }

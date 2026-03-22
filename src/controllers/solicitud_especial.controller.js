@@ -23,26 +23,39 @@ class SolicitudEspecialController {
       
       res.json(horario);
     } catch (error) {
-      console.error(error);
       res.status(400).json({ error: error.message });
     }
   }
 
   async aprobar(req, res) {
   try {
-    const { solicitud_especial_id } = req.params; // Cambiado para leer parámetro de ruta
+    const { solicitud_especial_id } = req.params;
+    
     if (!solicitud_especial_id) {
-      return res.status(400).json({ mensaje: "Solicitud especial id requerido" });
+      return res.status(400).json({ mensaje: "ID de solicitud especial requerido" });
     }
-    const emailsNotificados = await solicitudEspecialService.aprobarSolicitudEspecial(solicitud_especial_id);
+
+    await solicitudEspecialService.aprobarSolicitudEspecial(solicitud_especial_id);
+    
     res.json({
-      mensaje: "Solicitud especial aprobada, usuarios afectados notificados",
-      emailsNotificados
+      mensaje: "Solicitud especial aprobada con éxito. El espacio ha sido reservado y los afectados notificados."
     });
+
   } catch (error) {
-    res.status(500).json({ mensaje: "Error al aprobar solicitud especial", error: error.message });
+    // Manejo de errores específicos
+    if (error.message === "LA_SOLICITUD_NO_EXISTE") {
+        return res.status(404).json({ mensaje: "La solicitud especial no existe en el sistema." });
+    }
+    if (error.message === "LA_SOLICITUD_YA_ESTA_APROBADA") {
+        return res.status(400).json({ mensaje: "Esta solicitud ya fue aprobada anteriormente." });
+    }
+
+    res.status(500).json({ 
+        mensaje: "Error interno al procesar la aprobación", 
+        error: error.message 
+    });
   }
-  }
+}
 
   async rechazar(req, res) {
     try {
@@ -67,7 +80,6 @@ async getSolicitudesEspecialesPorUsuario(req, res) {
     const solicitudes = await solicitudEspecialService.getSolicitudesEspecialesPorUsuario(usuario_id);
     res.json(solicitudes);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes especiales del usuario" });
   }
 }

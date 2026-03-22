@@ -13,7 +13,6 @@ class SolicitudController {
     });
 
   } catch (error) {
-    console.error("Error en insertarSolicitudNormal:", error.message);
 
     // Manejo de errores personalizados lanzados desde SQL
     if (error.message.includes('CONF_ERR')) {
@@ -47,7 +46,6 @@ async getSolicitudesNormalesPorUsuario(req, res) {
     const solicitudes = await solicitudService.getSolicitudesNormalesPorUsuario(usuario_id);
     res.json(solicitudes);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes normales del usuario" });
   }
 }
@@ -60,7 +58,6 @@ async obtenerHorarioEspacio(req, res) {
       horario = await solicitudService.obtenerHorarioPorEspacio(espacio_id);
       res.json(horario);
     } catch (error) {
-      console.error(error);
       res.status(400).json({ error: error.message });
     }
   }
@@ -78,7 +75,6 @@ async aprobarSolicitud(req, res) {
       data: resultado 
     });
   } catch (error) {
-    console.error("Error al aprobar:", error.message);
 
     // Si el error viene de nuestro SIGNAL SQLSTATE en MySQL
     if (error.message.includes('Error:') || error.message.includes('No se puede')) {
@@ -168,7 +164,6 @@ async getSolicitudesPorSemana(req, res) {
     const semanal = await solicitudService.getSolicitudesPorSemana(mesNumero, espacioIdNumero);
     res.json(semanal);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ 
       mensaje: error.message || "Error obteniendo solicitudes semanales" 
     });
@@ -180,7 +175,6 @@ async getConflictos(req, res) {
     const conflictos = await solicitudService.getSolicitudesConConflicto();
     res.json(conflictos);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ mensaje: error.message || "Error obteniendo las solicitudes en conflicto" });
   }
 }
@@ -190,7 +184,6 @@ async getSolicitudes(req, res) {
       const solicitudes = await solicitudService.getSolicitudes();
       res.json(solicitudes);
     } catch (error) {
-      console.error(error);
       res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes aprobadas" });
     }
   }
@@ -200,7 +193,6 @@ async getSolicitudes(req, res) {
       const solicitudes = await solicitudService.getAll();
       res.json(solicitudes);
     } catch (error) {
-      console.error(error);
       res.status(500).json({ mensaje: error.message || "Error obteniendo solicitudes pendientes/rechazadas" });
     }
   }

@@ -66,7 +66,6 @@ class PeriodoService {
       return `${mesInicio}-${mesFin}`;
       
     } catch (error) {
-      console.error("Error formateando nombre de periodo:", error);
       return "Error al formatear periodo";
     }
   }
@@ -100,7 +99,6 @@ class PeriodoService {
       return `${mesInicio}-${mesFin}`;
       
     } catch (error) {
-      console.error("Error formateando nombre de periodo:", error);
       return "Error al formatear periodo";
     }
   }
@@ -114,7 +112,6 @@ class PeriodoService {
       const anio = parseInt(fechaStr.substring(0, 4));
       return isNaN(anio) ? null : anio;
     } catch (error) {
-      console.error("Error obteniendo año:", error);
       return null;
     }
   }
@@ -142,7 +139,6 @@ class PeriodoService {
       return dias + 1;
       
     } catch (error) {
-      console.error("Error calculando duración:", error);
       return null;
     }
   }

@@ -21,6 +21,7 @@ const reporte_danoRoutes = require("./src/routes/reporte_dano.routes");
 const catalogoElementoRoutes = require("./src/routes/catalogo.routes");
 const espacioInventarioRoutes = require("./src/routes/espacio_inventario.routes");
 const tipoRoutes = require("./src/routes/tipo.routes");
+const notificacionRoutes = require("./src/routes/notificacion.routes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/reporte", reporte_danoRoutes);
 app.use("/api/catalogo", catalogoElementoRoutes);
 app.use("/api/espacio_inventario", espacioInventarioRoutes);
 app.use("/api/tipos", tipoRoutes);
+app.use("/api/notificaciones", notificacionRoutes);
 
 AppDataSource.initialize()
   .then(async () => {

@@ -110,13 +110,32 @@ async obtenerHorarioPorEspacio(espacio_id) {
 } 
 
   async aprobarSolicitudEspecial(solicitud_especial_id) {
+    // 1. Validar si existe y su estado actual
+    const solicitud = await AppDataSource.query(
+        `SELECT estado FROM solicitud_especial WHERE solicitud_especial_id = ?`,
+        [solicitud_especial_id]
+    );
+
+    if (solicitud.length === 0) {
+        throw new Error("LA_SOLICITUD_NO_EXISTE");
+    }
+
+    if (solicitud[0].estado === 'aprobada') {
+        throw new Error("LA_SOLICITUD_YA_ESTA_APROBADA");
+    }
+    
+    if (solicitud[0].estado === 'rechazada') {
+        throw new Error("NO_SE_PUEDE_APROBAR_UNA_SOLICITUD_RECHAZADA");
+    }
+
+    // 2. Si todo está bien, ejecutar el procedimiento
     const result = await AppDataSource.query(
-      `CALL aprobar_solicitud_especial(?)`,
-      [solicitud_especial_id]
+        `CALL aprobar_solicitud_especial(?)`,
+        [solicitud_especial_id]
     );
 
     return result;
-  }
+}
 
 async rechazarSolicitudEspecial(solicitud_especial_id) {
     const result = await AppDataSource.query(
