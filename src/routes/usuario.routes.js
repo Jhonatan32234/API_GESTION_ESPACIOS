@@ -79,7 +79,7 @@ router.get("/:id", authMiddleware(["administrador", "docente"]), usuarioControll
  *       201:
  *         description: Usuario creado
  */
-router.post("/", usuarioController.create);
+router.post("/",authMiddleware(['administrador']), usuarioController.create);
 
 /**
  * @swagger

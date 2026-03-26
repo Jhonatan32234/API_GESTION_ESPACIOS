@@ -51,5 +51,40 @@ router.post("/login", usuarioController.login);
  */
 router.post("/logout", usuarioController.logout);
 
+/**
+ * @swagger
+ * /api/auth/register-admin:
+ *   post:
+ *     summary: Registro especial para el primer administrador del sistema
+ *     description: Permite crear un administrador solo si no existe ninguno en la base de datos. Es un endpoint público para configuración inicial.
+ *     tags: [Autenticación]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nombre
+ *               - apellido
+ *               - email
+ *               - contrasena
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               apellido:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               contrasena:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Administrador creado exitosamente
+ *       400:
+ *         description: Ya existe un administrador o error en los datos
+ */
+router.post("/register-admin", usuarioController.registerFirstAdmin);
+
 
 module.exports = router;

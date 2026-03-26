@@ -4,7 +4,7 @@ const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors"); 
 const AppDataSource = require("./src/config/ormconfig");
-const runProcedures = require("./src/config/procQuery"); // 👈 importamos aquí
+const runProcedures = require("./src/config/procQuery");
 
 const { swaggerUi, swaggerSpec } = require("./src/config/swagger");
 const usuarioRoutes = require("./src/routes/usuario.routes");
@@ -21,7 +21,6 @@ const reporte_danoRoutes = require("./src/routes/reporte_dano.routes");
 const catalogoElementoRoutes = require("./src/routes/catalogo.routes");
 const espacioInventarioRoutes = require("./src/routes/espacio_inventario.routes");
 const tipoRoutes = require("./src/routes/tipo.routes");
-const notificacionRoutes = require("./src/routes/notificacion.routes");
 
 const app = express();
 
@@ -53,12 +52,11 @@ app.use("/api/reporte", reporte_danoRoutes);
 app.use("/api/catalogo", catalogoElementoRoutes);
 app.use("/api/espacio_inventario", espacioInventarioRoutes);
 app.use("/api/tipos", tipoRoutes);
-app.use("/api/notificaciones", notificacionRoutes);
 
 AppDataSource.initialize()
   .then(async () => {
     console.log("📦 Base de datos conectada");
-    await runProcedures(); // 👈 aquí se migran tus procedures
+    await runProcedures();
   })
   .catch(err => console.error("❌ Error DB:", err));
 

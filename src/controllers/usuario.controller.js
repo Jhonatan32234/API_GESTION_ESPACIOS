@@ -34,7 +34,6 @@ class UsuarioController {
     const result = await usuarioService.desactivar(id, solicitorId);
 
     if (!result.success) {
-      // Enviamos el mensaje que definimos en el Service ("No puedes desactivar tu propia cuenta", etc.)
       return res.status(400).json({
         success: false,
         message: result.message 
@@ -72,6 +71,23 @@ class UsuarioController {
     });
   }
 }
+
+  async registerFirstAdmin(req, res) {
+    try {
+      const usuario = await usuarioService.createFirstAdmin(req.body);
+      res.status(201).json({
+        success: true,
+        data: usuario,
+        message: 'Primer administrador creado exitosamente'
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+        message: 'No se pudo realizar el registro especial'
+      });
+    }
+  }
 
   async update(req, res) {
     try {
