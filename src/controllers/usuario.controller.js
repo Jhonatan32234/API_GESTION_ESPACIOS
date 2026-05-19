@@ -139,10 +139,13 @@ class UsuarioController {
 
     console.log("Enviando respuesta exitosa 200...");
     return res.status(200).json({
-      id: usuario.id,
-      rol: usuario.rol
-      // ... otros datos
-    });
+  // 🚨 Mapea el ID de ambas formas para asegurar compatibilidad total
+  id: usuario.id, 
+  usuario_id: usuario.id, 
+  
+  rol: usuario.rol,
+  nombre: usuario.nombre // O los datos adicionales que uses
+});
 
   } catch (globalError) {
     console.error("❌ ERROR GLOBAL EN LOGIN:", globalError.message);
