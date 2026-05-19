@@ -30,7 +30,7 @@ app.use(cookieParser());
 
 app.use(cors({
   // 🚨 Coloca los dominios exactos de tus frontends (el de producción y tu local)
-  origin: ["https://espacios.alejandroz.cloud", "http://localhost:5173"], 
+  origin: ["https://espacios.alejandroz.cloud", "http://localhost:5173","https://localhost:5173"], 
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
