@@ -24,6 +24,7 @@ const tipoRoutes = require("./src/routes/tipo.routes");
 
 const app = express();
 
+app.set("trust proxy", 1);
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
