@@ -29,12 +29,11 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-  origin: ["https://espacios.alejandroz.cloud", "http://localhost:5173","https://localhost:5173"], 
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS", // Añadido OPTIONS por seguridad
+  // 🚨 Coloca los dominios exactos de tus frontends (el de producción y tu local)
+  origin: ["https://espacios.alejandroz.cloud", "http://localhost:5173"], 
   credentials: true,
-  // 🚨 CRUCIAL: Le dice al navegador que permita leer y guardar la cookie 
-  // enviada en contextos cross-origin distintos.
-  exposedHeaders: ["set-cookie"] 
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Swagger

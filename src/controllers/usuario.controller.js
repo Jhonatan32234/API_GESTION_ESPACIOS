@@ -117,17 +117,13 @@ class UsuarioController {
       // En tu UsuarioController (Método login)
       const esProduccion = process.env.NODE_ENV === "production";
 
+      // En tu authController.js (Backend)
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true, // Mantener true si usas HTTPS tanto local como producción
-        sameSite: "none",
-            
-        // 🚨 LA SOLUCIÓN DINÁMICA: 
-        // Si está en producción, aplica el dominio para los subdominios. 
-        // Si estás en local, usa undefined para que el navegador asuma 'localhost'.
-        domain: esProduccion ? ".jhonatanzc.fun" : undefined, 
-            
-        maxAge: 24 * 60 * 60 * 1000
+        secure: true,      // 👈 Obligatorio para que funcione con SameSite: 'none'
+        sameSite: "none",  // 👈 Esto es lo que realmente permite que viaje entre subdominios distintos
+        maxAge: 24 * 60 * 60 * 1000 // 1 día
+        // ❌ BORRA por completo la línea de 'domain' para evitar el Error 500
       });
       
       // Guardar cookies
