@@ -115,30 +115,43 @@ class UsuarioController {
 
       const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
       // En tu UsuarioController (Método login)
-      const esProduccion = process.env.NODE_ENV === "production";
+      console.log("=== INICIO DEBUG COOKIE ===");
+    console.log("Token generado con éxito, intentando res.cookie...");
 
-      // En tu authController.js (Backend)
+    try {
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true,      // 👈 Obligatorio para que funcione con SameSite: 'none'
-        sameSite: "none",  // 👈 Esto es lo que realmente permite que viaje entre subdominios distintos
-        maxAge: 24 * 60 * 60 * 1000 // 1 día
-        // ❌ BORRA por completo la línea de 'domain' para evitar el Error 500
+        secure: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000
       });
+      console.log("✅ res.cookie se ejecutó sin lanzar excepciones");
+    } catch (cookieError) {
+      console.error("❌ ERROR CRÍTICO EN RES.COOKIE:", cookieError.message);
       
-      // Guardar cookies
-      res.cookie("id", usuario.usuario_id, { ...cookieOptions, httpOnly: false });
-      res.cookie("rol", usuario.rol, { ...cookieOptions, httpOnly: false });
-      // Es mejor retornar un 200 limpio ocultando datos innecesarios si fuera el caso
-      return res.json({
-        mensaje: "Login exitoso",
-        usuario
+      // Te lo devolvemos en el JSON para que lo leas directo en la consola del navegador
+      return res.status(500).json({ 
+        mensaje: "Error interno al serializar la cookie", 
+        debug_error: cookieError.message,
+        debug_stack: cookieError.stack 
       });
-    } catch (error) {
-      // Cambiado a 500 para errores internos inesperados del servidor
-      return res.status(500).json({ mensaje: "Error interno en el servidor" });
     }
+
+    console.log("Enviando respuesta exitosa 200...");
+    return res.status(200).json({
+      id: usuario.id,
+      rol: usuario.rol
+      // ... otros datos
+    });
+
+  } catch (globalError) {
+    console.error("❌ ERROR GLOBAL EN LOGIN:", globalError.message);
+    return res.status(500).json({ 
+      mensaje: "Error en el servidor", 
+      debug_error: globalError.message 
+    });
   }
+}
 
   async logout(req, res) {
     const isProduction = process.env.NODE_ENV === "production";
