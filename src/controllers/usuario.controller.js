@@ -104,7 +104,7 @@ class UsuarioController {
     res.status(204).send();
   }
 
-  async login (req, res) {
+  async login(req, res) {
   try {
     const { email, contrasena } = req.body;
     const usuario = await usuarioService.login(email, contrasena);
@@ -113,39 +113,41 @@ class UsuarioController {
       return res.status(401).json({ mensaje: "Credenciales incorrectas" });
     }
 
-    // 1. Generar JWT para el Middleware de la API
-    const token = generarToken({ id: usuario.usuario_id || usuario.id, rol: usuario.rol });
+    const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
 
-    // 2. COOKIE SEGURA (Para el Middleware - HttpOnly)
-    res.cookie("token", token, {
-      httpOnly: true,  // Blindada contra ataques XSS (JavaScript no la puede leer)
-      secure: true,    // Obligatorio para HTTPS en producción
-      sameSite: "none",// Permite transmisión entre dominios cruzados
-      maxAge: 24 * 60 * 60 * 1000 // 1 día
+    // Configuración base para producción (Cross-Origin)
+    const cookieOptionsPublicas = {
+      httpOnly: false, // 🚨 Fiel a tu código: accesible desde el cliente de React
+      secure: true,    // 🚨 Obligatorio para entornos de producción HTTPS
+      sameSite: "none",// 🚨 Obligatorio para que viajen entre dominios distintos (.cloud y .fun)
+      maxAge: 24 * 60 * 60 * 1000 // 1 día (opcional, para que no venzan al cerrar el navegador)
+    };
+
+    const cookieOptionsPrivadas = {
+      ...cookieOptionsPublicas,
+      httpOnly: true   // 🚨 Fiel a tu código: Protegida contra XSS
+    };
+
+    // 1. Guardar token en cookie HTTPOnly (Para tus middlewares)
+    res.cookie("token", token, cookieOptionsPrivadas);
+
+    // 2. Guardar id en cookie separada (Accesible por tu frontend)
+    res.cookie("id", usuario.usuario_id, cookieOptionsPublicas);
+
+    // 3. Guardar rol en cookie separada (Accesible por tu frontend)
+    res.cookie("rol", usuario.rol, cookieOptionsPublicas);
+
+    // Mantenemos tu respuesta JSON intacta por si tu frontend la usa en algún lado
+    return res.json({
+      mensaje: "Login exitoso",
+      usuario
     });
-
-    // 3. COOKIE PÚBLICA (Para que tu Frontend de React lea los datos directamente)
-    const datosPublicos = JSON.stringify({
-      usuario_id: usuario.usuario_id || usuario.id,
-      rol: usuario.rol,
-      nombre: usuario.nombre || ""
-    });
-
-    res.cookie("usuario_sesion", datosPublicos, {
-      httpOnly: false, // 🚨 CRUCIAL: Permite que el Frontend la lea con document.cookie
-      secure: true,    // Obligatorio para HTTPS
-      sameSite: "none",// Permite lectura cruzada de dominios (.alejandroz.cloud -> .jhonatanzc.fun)
-      maxAge: 24 * 60 * 60 * 1000 // 1 día
-    });
-
-    // Respuesta limpia. El frontend ya no depende del body, leerá las cookies.
-    return res.status(200).json({ mensaje: "Login exitoso" });
 
   } catch (error) {
-    console.error("❌ Error global en Login:", error.message);
-    return res.status(500).json({ mensaje: "Error interno en el servidor" });
+    console.error("Error en login:", error.message);
+    return res.status(403).json({ mensaje: error.message });
   }
-};
+}
 
   async logout(req, res) {
     const isProduction = process.env.NODE_ENV === "production";
