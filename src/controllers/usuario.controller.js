@@ -104,57 +104,48 @@ class UsuarioController {
     res.status(204).send();
   }
 
-  async login(req, res) {
-    try {
-      const { email, contrasena } = req.body;
-      const usuario = await usuarioService.login(email, contrasena);
+  async login (req, res) {
+  try {
+    const { email, contrasena } = req.body;
+    const usuario = await usuarioService.login(email, contrasena);
 
-      if (!usuario) {
-        return res.status(401).json({ mensaje: "Credenciales incorrectas" });
-      }
-
-      const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
-      // En tu UsuarioController (Método login)
-      console.log("=== INICIO DEBUG COOKIE ===");
-    console.log("Token generado con éxito, intentando res.cookie...");
-
-    try {
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000
-      });
-      console.log("✅ res.cookie se ejecutó sin lanzar excepciones");
-    } catch (cookieError) {
-      console.error("❌ ERROR CRÍTICO EN RES.COOKIE:", cookieError.message);
-      
-      // Te lo devolvemos en el JSON para que lo leas directo en la consola del navegador
-      return res.status(500).json({ 
-        mensaje: "Error interno al serializar la cookie", 
-        debug_error: cookieError.message,
-        debug_stack: cookieError.stack 
-      });
+    if (!usuario) {
+      return res.status(401).json({ mensaje: "Credenciales incorrectas" });
     }
 
-    console.log("Enviando respuesta exitosa 200...");
-    return res.status(200).json({
-  // 🚨 Mapea el ID de ambas formas para asegurar compatibilidad total
-  id: usuario.id, 
-  usuario_id: usuario.id, 
-  
-  rol: usuario.rol,
-  nombre: usuario.nombre // O los datos adicionales que uses
-});
+    // 1. Generar JWT para el Middleware de la API
+    const token = generarToken({ id: usuario.usuario_id || usuario.id, rol: usuario.rol });
 
-  } catch (globalError) {
-    console.error("❌ ERROR GLOBAL EN LOGIN:", globalError.message);
-    return res.status(500).json({ 
-      mensaje: "Error en el servidor", 
-      debug_error: globalError.message 
+    // 2. COOKIE SEGURA (Para el Middleware - HttpOnly)
+    res.cookie("token", token, {
+      httpOnly: true,  // Blindada contra ataques XSS (JavaScript no la puede leer)
+      secure: true,    // Obligatorio para HTTPS en producción
+      sameSite: "none",// Permite transmisión entre dominios cruzados
+      maxAge: 24 * 60 * 60 * 1000 // 1 día
     });
+
+    // 3. COOKIE PÚBLICA (Para que tu Frontend de React lea los datos directamente)
+    const datosPublicos = JSON.stringify({
+      usuario_id: usuario.usuario_id || usuario.id,
+      rol: usuario.rol,
+      nombre: usuario.nombre || ""
+    });
+
+    res.cookie("usuario_sesion", datosPublicos, {
+      httpOnly: false, // 🚨 CRUCIAL: Permite que el Frontend la lea con document.cookie
+      secure: true,    // Obligatorio para HTTPS
+      sameSite: "none",// Permite lectura cruzada de dominios (.alejandroz.cloud -> .jhonatanzc.fun)
+      maxAge: 24 * 60 * 60 * 1000 // 1 día
+    });
+
+    // Respuesta limpia. El frontend ya no depende del body, leerá las cookies.
+    return res.status(200).json({ mensaje: "Login exitoso" });
+
+  } catch (error) {
+    console.error("❌ Error global en Login:", error.message);
+    return res.status(500).json({ mensaje: "Error interno en el servidor" });
   }
-}
+};
 
   async logout(req, res) {
     const isProduction = process.env.NODE_ENV === "production";
