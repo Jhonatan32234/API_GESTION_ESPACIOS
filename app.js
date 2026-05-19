@@ -29,7 +29,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors({
-  origin: ["https://espacios.alejandroz.cloud", "http://localhost:5173"], 
+  origin: ["https://espacios.alejandroz.cloud", "http://localhost:5173","https://localhost:5173"], 
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS", // Añadido OPTIONS por seguridad
   credentials: true,
   // 🚨 CRUCIAL: Le dice al navegador que permita leer y guardar la cookie 
