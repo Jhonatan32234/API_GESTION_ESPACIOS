@@ -115,19 +115,19 @@ class UsuarioController {
 
       const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
       // En tu UsuarioController (Método login)
-      const isProduction = process.env.NODE_ENV === "production";
-          
+      const esProduccion = process.env.NODE_ENV === "production";
+
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true, // Requerido para entornos HTTPS de producción
-        sameSite: "none", // Permite el intercambio entre dominios cruzados
+        secure: true, // Mantener true si usas HTTPS tanto local como producción
+        sameSite: "none",
             
-        // 🚨 LA CORRECCIÓN CRUCIAL:
-        // Al usar el dominio base común con un punto inicial, indicas al navegador
-        // que comparta la cookie con subdominios cruzados.
-        domain: ".jhonatanzc.fun", 
+        // 🚨 LA SOLUCIÓN DINÁMICA: 
+        // Si está en producción, aplica el dominio para los subdominios. 
+        // Si estás en local, usa undefined para que el navegador asuma 'localhost'.
+        domain: esProduccion ? ".jhonatanzc.fun" : undefined, 
             
-        maxAge: 24 * 60 * 60 * 1000 // 1 día de duración
+        maxAge: 24 * 60 * 60 * 1000
       });
       
       // Guardar cookies
