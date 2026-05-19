@@ -117,15 +117,20 @@ class UsuarioController {
       // En tu UsuarioController (Método login)
       const isProduction = process.env.NODE_ENV === "production";
           
-      const cookieOptions = {
-        // CRUCIAL: "none" para permitir el viaje entre alejandroz.cloud y jhonatanzc.fun
-        sameSite: isProduction ? "none" : "lax", 
-        secure: isProduction, // OBLIGATORIO: Debe ser true si sameSite es "none"
-        maxAge: 24 * 60 * 60 * 1000, // 1 día
-      };
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true, // Requerido para entornos HTTPS de producción
+        sameSite: "none", // Permite el intercambio entre dominios cruzados
+            
+        // 🚨 LA CORRECCIÓN CRUCIAL:
+        // Al usar el dominio base común con un punto inicial, indicas al navegador
+        // que comparta la cookie con subdominios cruzados.
+        domain: ".jhonatanzc.fun", 
+            
+        maxAge: 24 * 60 * 60 * 1000 // 1 día de duración
+      });
       
       // Guardar cookies
-      res.cookie("token", token, { ...cookieOptions, httpOnly: true });
       res.cookie("id", usuario.usuario_id, { ...cookieOptions, httpOnly: false });
       res.cookie("rol", usuario.rol, { ...cookieOptions, httpOnly: false });
       // Es mejor retornar un 200 limpio ocultando datos innecesarios si fuera el caso
