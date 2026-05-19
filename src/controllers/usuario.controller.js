@@ -106,38 +106,55 @@ class UsuarioController {
 
   async login(req, res) {
     try {
-  const { email, contrasena } = req.body;
-  const usuario = await usuarioService.login(email, contrasena);
+      const { email, contrasena } = req.body;
+      const usuario = await usuarioService.login(email, contrasena);
 
-  if (!usuario) {
-    return res.status(401).json({ mensaje: "Credenciales incorrectas" });
+      if (!usuario) {
+        return res.status(401).json({ mensaje: "Credenciales incorrectas" });
+      }
+
+      const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
+      const isProduction = process.env.NODE_ENV === "production";
+
+      // 📦 Configuración dinámica y correcta para cookies de producción cruzada
+      const cookieOptions = {
+        secure: isProduction, 
+        sameSite: isProduction ? "none" : "lax", // "none" permite cross-site entre tus dominios en producción
+        maxAge: 24 * 60 * 60 * 1000, // Duración: 1 día
+      };
+
+      // Guardar token en cookie HTTPOnly
+      res.cookie("token", token, { ...cookieOptions, httpOnly: true });
+
+      // Guardar id y rol accesibles desde el cliente
+      res.cookie("id", usuario.usuario_id, { ...cookieOptions, httpOnly: false });
+      res.cookie("rol", usuario.rol, { ...cookieOptions, httpOnly: false });
+
+      // Es mejor retornar un 200 limpio ocultando datos innecesarios si fuera el caso
+      return res.json({
+        mensaje: "Login exitoso",
+        usuario
+      });
+    } catch (error) {
+      // Cambiado a 500 para errores internos inesperados del servidor
+      return res.status(500).json({ mensaje: "Error interno en el servidor" });
+    }
   }
 
-  const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
+  async logout(req, res) {
+    const isProduction = process.env.NODE_ENV === "production";
+    
+    // ⚠️ Las opciones para borrar deben coincidir exactamente con las que se crearon
+    const clearOptions = {
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax"
+    };
 
-  // Guardar token en cookie HTTPOnly
-  res.cookie("token", token, { httpOnly: true, secure: false, sameSite: "strict" });
+    res.clearCookie("token", { ...clearOptions, httpOnly: true });
+    res.clearCookie("id", { ...clearOptions, httpOnly: false });
+    res.clearCookie("rol", { ...clearOptions, httpOnly: false });
 
-  res.cookie("id", usuario.usuario_id, { httpOnly: false, secure: false, sameSite: "strict" });
-  // Guardar rol en cookie separada (no HTTPOnly para que sea accesible desde cliente si es necesario)
-  res.cookie("rol", usuario.rol, { httpOnly: false, secure: false, sameSite: "strict" });
-
-  res.json({
-    mensaje: "Login exitoso",
-    usuario
-  });
-} catch (error) {
-  res.status(403).json({ mensaje: error.message });
-}
-}
-
- async logout(req, res) {
-    // Borrar cookies estableciendo valor vacío y expiración pasada
-    res.clearCookie("token", { httpOnly: true, secure: false, sameSite: "strict" });
-    res.clearCookie("id", { httpOnly: false, secure: false, sameSite: "strict" });
-    res.clearCookie("rol", { httpOnly: false, secure: false, sameSite: "strict" });
-
-    res.json({ mensaje: "Logout exitoso" });
+    return res.json({ mensaje: "Logout exitoso" });
   }
 }
 
