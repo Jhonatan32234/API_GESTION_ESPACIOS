@@ -114,22 +114,20 @@ class UsuarioController {
       }
 
       const token = generarToken({ id: usuario.usuario_id, rol: usuario.rol });
+      // En tu UsuarioController (Método login)
       const isProduction = process.env.NODE_ENV === "production";
-
-      // 📦 Configuración dinámica y correcta para cookies de producción cruzada
+          
       const cookieOptions = {
-        secure: isProduction, 
-        sameSite: isProduction ? "none" : "lax", // "none" permite cross-site entre tus dominios en producción
-        maxAge: 24 * 60 * 60 * 1000, // Duración: 1 día
+        // CRUCIAL: "none" para permitir el viaje entre alejandroz.cloud y jhonatanzc.fun
+        sameSite: isProduction ? "none" : "lax", 
+        secure: isProduction, // OBLIGATORIO: Debe ser true si sameSite es "none"
+        maxAge: 24 * 60 * 60 * 1000, // 1 día
       };
-
-      // Guardar token en cookie HTTPOnly
+      
+      // Guardar cookies
       res.cookie("token", token, { ...cookieOptions, httpOnly: true });
-
-      // Guardar id y rol accesibles desde el cliente
       res.cookie("id", usuario.usuario_id, { ...cookieOptions, httpOnly: false });
       res.cookie("rol", usuario.rol, { ...cookieOptions, httpOnly: false });
-
       // Es mejor retornar un 200 limpio ocultando datos innecesarios si fuera el caso
       return res.json({
         mensaje: "Login exitoso",
